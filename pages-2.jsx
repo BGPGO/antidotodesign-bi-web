@@ -381,6 +381,7 @@ const PageTesouraria = ({ filters, setFilters, onOpenFilters, statusFilter, dril
       </div>
 
       <DrilldownBadge drilldown={drilldown} onClear={() => setDrilldown(null)} />
+      <InlineFilterBar drilldown={drilldown} setDrilldown={setDrilldown} filters={filters} setFilters={setFilters} />
 
       <div className="row row-4">
         <KpiTile label={drilldown ? `Recebido · ${drilldown.label}` : "Recebido (PAGO)"} value={B.fmtK(drilldown ? dreDrill.receitaOp : recebido)} sparkValues={recDiaSeg} sparkColor="var(--green)" tone="green" nonMonetary />
@@ -800,6 +801,7 @@ const PageComparativo = ({ filters, setFilters, statusFilter, drilldown, setDril
       </div>
 
       <DrilldownBadge drilldown={drilldown} onClear={() => setDrilldown && setDrilldown(null)} />
+      <InlineFilterBar drilldown={drilldown} setDrilldown={setDrilldown} filters={filters} setFilters={setFilters} />
 
       <div className="row row-3-9">
         <div style={{ display: "grid", gap: 16 }}>

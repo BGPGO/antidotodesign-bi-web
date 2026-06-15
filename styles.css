@@ -2927,6 +2927,8 @@ table.t tr.total td {
   border: 1px solid var(--border);
   border-radius: 8px;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 100;
 }
 .ifb-item {
   display: flex;
@@ -2969,7 +2971,7 @@ table.t tr.total td {
   border: 1px solid var(--cyan);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  z-index: 50;
+  z-index: 9999;
   padding: 8px;
   min-width: 280px;
 }

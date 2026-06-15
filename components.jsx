@@ -741,8 +741,9 @@ const KpiTile = ({ label, value, unit, deltaPct, deltaDir, sparkValues, sparkCol
 const DEFAULT_FILTERS = {
   regime: "caixa",
   status: "Todos status",
-  categoria: "Todas categorias",
-  cc: "Todos centros de custo",
+  categoria: [],
+  cc: [],
+  codRef: [],
   dateFrom: "",
   dateTo: "",
   diaFrom: 0,
@@ -753,111 +754,131 @@ const countActiveFilters = (f) => {
   let n = 0;
   if (f.regime !== DEFAULT_FILTERS.regime) n++;
   if (f.status !== DEFAULT_FILTERS.status) n++;
-  if (f.categoria !== DEFAULT_FILTERS.categoria) n++;
-  if (f.cc !== DEFAULT_FILTERS.cc) n++;
+  if (f.categoria && f.categoria.length > 0) n++;
+  if (f.cc && f.cc.length > 0) n++;
+  if (f.codRef && f.codRef.length > 0) n++;
   if (f.dateFrom || f.dateTo) n++;
   return n;
 };
 
 // Toolbar de filtros inline (substitui o modal removido).
 // Lê categorias únicas de window.ALL_TX e seta drilldown global.
-const InlineFilterBar = ({ kindHint, drilldown, setDrilldown }) => {
-  const [searchOpen, setSearchOpen] = React.useState(false);
-  const [searchTerm, setSearchTerm] = React.useState("");
-  const [grupo, setGrupo] = React.useState(() => {
-    if (kindHint === "r") return "Receita";
-    if (kindHint === "d") return "Despesa";
-    return drilldown && drilldown.type === "kind"
-      ? (drilldown.value === "r" ? "Receita" : "Despesa")
-      : "Todos";
-  });
-  React.useEffect(() => {
-    if (kindHint === "r") setGrupo("Receita");
-    else if (kindHint === "d") setGrupo("Despesa");
-  }, [kindHint]);
+const InlineFilterBar = ({ kindHint, drilldown, setDrilldown, filters, setFilters }) => {
+  const [catOpen, setCatOpen] = React.useState(false);
+  const [catSearch, setCatSearch] = React.useState("");
+  const [ccOpen, setCcOpen] = React.useState(false);
+  const [ccSearch, setCcSearch] = React.useState("");
+  const [refOpen, setRefOpen] = React.useState(false);
+  const [refSearch, setRefSearch] = React.useState("");
 
-  // Lê categorias únicas filtradas pelo grupo
+  const updateFilter = (patch) => { if (setFilters) setFilters(Object.assign({}, filters || {}, patch)); };
+  const selCats = (filters && filters.categoria) || [];
+  const selCcs = (filters && filters.cc) || [];
+  const selRefs = (filters && filters.codRef) || [];
+
+  // Toggle item in array
+  const toggle = (arr, item) => arr.includes(item) ? arr.filter(x => x !== item) : [...arr, item];
+
+  // Unique values from ALL_TX
   const categorias = React.useMemo(() => {
     const all = window.ALL_TX || [];
     const set = new Set();
-    for (const row of all) {
-      const [kind, , , categoria] = row;
-      if (!categoria) continue;
-      if (grupo === "Receita" && kind !== "r") continue;
-      if (grupo === "Despesa" && kind !== "d") continue;
-      set.add(categoria);
-    }
+    for (const row of all) { if (row[3]) set.add(row[3]); }
     return [...set].sort();
-  }, [grupo]);
+  }, []);
 
-  const filtered = React.useMemo(() => {
-    if (!searchTerm) return categorias.slice(0, 50);
-    const q = searchTerm.toLowerCase();
-    return categorias.filter(c => c.toLowerCase().includes(q)).slice(0, 50);
-  }, [categorias, searchTerm]);
+  const centrosCusto = React.useMemo(() => {
+    const all = window.ALL_TX || [];
+    const set = new Set();
+    for (const row of all) { if (row[8]) set.add(row[8]); }
+    return [...set].sort();
+  }, []);
 
-  const activeCategoria = drilldown && drilldown.type === "categoria" ? drilldown.value : null;
+  const codsRef = React.useMemo(() => {
+    const all = window.ALL_TX || [];
+    const set = new Set();
+    for (const row of all) { if (row[10]) set.add(row[10]); }
+    return [...set].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  }, []);
 
-  const setGrupoAndClearCat = (v) => {
-    setGrupo(v);
-    if (drilldown && drilldown.type === "categoria") setDrilldown(null);
-  };
-  const handleCatSelect = (c) => {
-    setDrilldown({ type: "categoria", value: c, label: c });
-    setSearchOpen(false);
-    setSearchTerm("");
-  };
+  const filterList = (list, q) => q ? list.filter(c => c.toLowerCase().includes(q.toLowerCase())).slice(0, 60) : list.slice(0, 60);
+  const filteredCats = React.useMemo(() => filterList(categorias, catSearch), [categorias, catSearch]);
+  const filteredCcs = React.useMemo(() => filterList(centrosCusto, ccSearch), [centrosCusto, ccSearch]);
+  const filteredRefs = React.useMemo(() => filterList(codsRef, refSearch), [codsRef, refSearch]);
+
+  const labelFor = (sel, allCount, singular) => sel.length === 0
+    ? <span style={{ color: "var(--mute)" }}>Todos</span>
+    : <span style={{ color: "var(--cyan)", fontWeight: 600 }}>{sel.length === 1 ? (sel[0].length > 24 ? sel[0].slice(0, 24) + "…" : sel[0]) : `${sel.length} ${singular}`}</span>;
+
+  const hasActive = selCats.length > 0 || selCcs.length > 0 || selRefs.length > 0 || (drilldown && drilldown.type);
+
+  // Close popovers on click outside
+  React.useEffect(() => {
+    if (!catOpen && !ccOpen && !refOpen) return;
+    const handler = (e) => {
+      if (!e.target.closest('.ifb-search-wrap')) { setCatOpen(false); setCcOpen(false); setRefOpen(false); }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [catOpen, ccOpen, refOpen]);
+
+  const renderMultiPopover = (items, selected, onToggle, onClear, searchVal, onSearch, placeholder) => (
+    <div className="ifb-popover">
+      <input autoFocus type="text" placeholder={placeholder} value={searchVal} onChange={e => onSearch(e.target.value)} className="ifb-search-input" />
+      {selected.length > 0 && (
+        <div className="ifb-popover-item" onClick={onClear} style={{ color: "var(--red)", fontStyle: "italic" }}>
+          Limpar seleção ({selected.length})
+        </div>
+      )}
+      <div className="ifb-popover-list">
+        {items.map(c => (
+          <div key={c} className={`ifb-popover-item ${selected.includes(c) ? "active" : ""}`} onClick={() => onToggle(c)}>
+            <span style={{ display: "inline-block", width: 18, textAlign: "center", marginRight: 6, fontSize: 12 }}>{selected.includes(c) ? "✓" : ""}</span>
+            {c}
+          </div>
+        ))}
+        {items.length === 0 && <div className="ifb-popover-item" style={{ color: "var(--mute)" }}>Nada encontrado</div>}
+      </div>
+    </div>
+  );
 
   return (
     <div className="inline-filterbar">
-      {!kindHint && (
-        <label className="ifb-item">
-          <span>Grupo</span>
-          <select className="filter-select" value={grupo} onChange={e => setGrupoAndClearCat(e.target.value)}>
-            <option>Todos</option>
-            <option>Receita</option>
-            <option>Despesa</option>
-          </select>
-        </label>
-      )}
-      <label className="ifb-item ifb-search-wrap">
+      <label className="ifb-item ifb-search-wrap" onClick={e => e.preventDefault()}>
         <span>Categoria</span>
-        <div className="ifb-search-trigger" onClick={() => setSearchOpen(o => !o)}>
-          <span style={{ flex: 1 }}>
-            {activeCategoria
-              ? <span style={{ color: "var(--cyan)", fontWeight: 600 }}>{activeCategoria.length > 28 ? activeCategoria.slice(0, 28) + "…" : activeCategoria}</span>
-              : <span style={{ color: "var(--mute)" }}>Todas categorias</span>}
-          </span>
+        <div className="ifb-search-trigger" onClick={() => { setCatOpen(o => !o); setCcOpen(false); setRefOpen(false); }}>
+          <span style={{ flex: 1 }}>{labelFor(selCats, categorias.length, "selecionadas")}</span>
           <Icon name="chevronRight" />
         </div>
-        {searchOpen && (
-          <div className="ifb-popover">
-            <input
-              autoFocus
-              type="text"
-              placeholder={`Pesquisar (${categorias.length} categorias)`}
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="ifb-search-input"
-            />
-            <div className="ifb-popover-list">
-              <div className="ifb-popover-item" onClick={() => { setDrilldown(null); setSearchOpen(false); setSearchTerm(""); }}>
-                <i>Todas categorias</i>
-              </div>
-              {filtered.map(c => (
-                <div key={c}
-                  className={`ifb-popover-item ${activeCategoria === c ? "active" : ""}`}
-                  onClick={() => handleCatSelect(c)}>
-                  {c}
-                </div>
-              ))}
-              {filtered.length === 0 && <div className="ifb-popover-item" style={{ color: "var(--mute)" }}>Nada encontrado</div>}
-            </div>
-          </div>
-        )}
+        {catOpen && renderMultiPopover(filteredCats, selCats,
+          (c) => updateFilter({ categoria: toggle(selCats, c) }),
+          () => updateFilter({ categoria: [] }),
+          catSearch, setCatSearch, `Pesquisar (${categorias.length} categorias)`)}
       </label>
-      {(activeCategoria || (drilldown && drilldown.type !== "categoria")) && (
-        <button className="btn-ghost" onClick={() => setDrilldown(null)} title="Limpar filtros">
+      <label className="ifb-item ifb-search-wrap" onClick={e => e.preventDefault()}>
+        <span>Centro de custo</span>
+        <div className="ifb-search-trigger" onClick={() => { setCcOpen(o => !o); setCatOpen(false); setRefOpen(false); }}>
+          <span style={{ flex: 1 }}>{labelFor(selCcs, centrosCusto.length, "selecionados")}</span>
+          <Icon name="chevronRight" />
+        </div>
+        {ccOpen && renderMultiPopover(filteredCcs, selCcs,
+          (c) => updateFilter({ cc: toggle(selCcs, c) }),
+          () => updateFilter({ cc: [] }),
+          ccSearch, setCcSearch, `Pesquisar (${centrosCusto.length} centros de custo)`)}
+      </label>
+      <label className="ifb-item ifb-search-wrap" onClick={e => e.preventDefault()}>
+        <span>Cód. referência</span>
+        <div className="ifb-search-trigger" onClick={() => { setRefOpen(o => !o); setCatOpen(false); setCcOpen(false); }}>
+          <span style={{ flex: 1 }}>{labelFor(selRefs, codsRef.length, "selecionados")}</span>
+          <Icon name="chevronRight" />
+        </div>
+        {refOpen && renderMultiPopover(filteredRefs, selRefs,
+          (c) => updateFilter({ codRef: toggle(selRefs, c) }),
+          () => updateFilter({ codRef: [] }),
+          refSearch, setRefSearch, `Pesquisar (${codsRef.length} códigos)`)}
+      </label>
+      {hasActive && (
+        <button className="btn-ghost" onClick={() => { setDrilldown(null); updateFilter({ categoria: [], cc: [], codRef: [] }); }} title="Limpar filtros">
           Limpar
         </button>
       )}
@@ -917,17 +938,8 @@ const FiltersDrawer = ({ open, onClose, filters, setFilters }) => {
             </select>
           </div>
           <div className="drawer-group">
-            <label>Categoria</label>
-            <select className="filter-select" value={filters.categoria} onChange={(e) => update({ categoria: e.target.value })}>
-              <option>Todas categorias</option><option>Folha</option><option>Marketing</option><option>Impostos</option>
-              <option>Infra & Cloud</option><option>Software & SaaS</option><option>Comissões</option>
-            </select>
-          </div>
-          <div className="drawer-group">
-            <label>Centro de custo</label>
-            <select className="filter-select" value={filters.cc} onChange={(e) => update({ cc: e.target.value })}>
-              <option>Todos centros de custo</option><option>Comercial</option><option>Operações</option><option>Financeiro</option>
-            </select>
+            <label>Categoria, Centro de custo e Cód. referência</label>
+            <p style={{ color: "var(--mute)", fontSize: 12 }}>Use os filtros na barra superior da página.</p>
           </div>
           <div className="drawer-group">
             <label>Período personalizado</label>

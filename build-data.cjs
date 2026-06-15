@@ -303,6 +303,7 @@ function normalizeAdapter(m) {
     realizado,
     cancelado: false,
     regime: m.regime || 'caixa',
+    numDocumento: m.num_documento || '',
   };
 }
 
@@ -635,6 +636,7 @@ const ALL_TX = ${JSON.stringify([
     '',
     t.centroCusto || '',
     (t.regime || 'caixa') === 'caixa' ? 'c' : 'k',
+    t.numDocumento || '',
   ]),
   ...despNorm.map(t => [
     'd',
@@ -647,6 +649,7 @@ const ALL_TX = ${JSON.stringify([
     t.cliente,
     t.centroCusto || '',
     (t.regime || 'caixa') === 'caixa' ? 'c' : 'k',
+    t.numDocumento || '',
   ]),
 ])};
 
@@ -778,14 +781,35 @@ function filterTx(allTx, statusFilter, drilldown, regime, extraFilters) {
         return r[2] <= dtDay;
       });
     }
-    if (extraFilters.categoria && extraFilters.categoria !== "Todas categorias") {
-      out = out.filter(function(r) { return r[3] === extraFilters.categoria; });
+    if (extraFilters.categoria) {
+      if (Array.isArray(extraFilters.categoria) && extraFilters.categoria.length > 0) {
+        var _catSet = new Set(extraFilters.categoria);
+        out = out.filter(function(r) { return _catSet.has(r[3]); });
+      } else if (typeof extraFilters.categoria === 'string' && extraFilters.categoria !== "Todas categorias") {
+        out = out.filter(function(r) { return r[3] === extraFilters.categoria; });
+      }
     }
     if (extraFilters.diaFrom && extraFilters.diaFrom > 0) {
       out = out.filter(function(r) { return r[2] >= extraFilters.diaFrom; });
     }
     if (extraFilters.diaTo && extraFilters.diaTo > 0) {
       out = out.filter(function(r) { return r[2] <= extraFilters.diaTo; });
+    }
+    if (extraFilters.cc) {
+      if (Array.isArray(extraFilters.cc) && extraFilters.cc.length > 0) {
+        var _ccSet = new Set(extraFilters.cc);
+        out = out.filter(function(r) { return _ccSet.has(r[8]); });
+      } else if (typeof extraFilters.cc === 'string' && extraFilters.cc !== "Todos centros de custo") {
+        out = out.filter(function(r) { return r[8] === extraFilters.cc; });
+      }
+    }
+    if (extraFilters.codRef) {
+      if (Array.isArray(extraFilters.codRef) && extraFilters.codRef.length > 0) {
+        var _refSet = new Set(extraFilters.codRef);
+        out = out.filter(function(r) { return _refSet.has(r[10]); });
+      } else if (typeof extraFilters.codRef === 'string' && extraFilters.codRef !== "Todos cód. referência") {
+        out = out.filter(function(r) { return r[10] === extraFilters.codRef; });
+      }
     }
   }
   return out;

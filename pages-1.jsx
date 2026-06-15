@@ -305,6 +305,7 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
       </div>
 
       <DrilldownBadge drilldown={drilldown} onClear={() => setDrilldown(null)} />
+      <InlineFilterBar drilldown={drilldown} setDrilldown={setDrilldown} filters={filters} setFilters={setFilters} />
 
       <div className="row" style={{ gridTemplateColumns: "minmax(280px, 3fr) minmax(0, 9fr)" }}>
         {/* LEFT: Indicadores Principais + Resultado Geral */}
@@ -416,6 +417,7 @@ const PageIndicators = ({ filters, statusFilter, drilldown, setDrilldown, year, 
       </div>
 
       <DrilldownBadge drilldown={drilldown} onClear={() => setDrilldown(null)} />
+      <InlineFilterBar drilldown={drilldown} setDrilldown={setDrilldown} filters={filters} setFilters={setFilters} />
 
       <div className="metric-strip">
         <div className="metric">
@@ -521,6 +523,7 @@ const PageReceita = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
       </div>
 
       <DrilldownBadge drilldown={drilldown} onClear={() => setDrilldown(null)} />
+      <InlineFilterBar drilldown={drilldown} setDrilldown={setDrilldown} filters={filters} setFilters={setFilters} />
 
       <div className="row row-4">
         <KpiTile label="Receita operacional" value={B.fmtK(totalReceita)} sparkValues={dreFull.receitaOpMonth} sparkColor="var(--green)" tone="green" nonMonetary />
@@ -634,6 +637,7 @@ const PageDespesa = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
       </div>
 
       <DrilldownBadge drilldown={drilldown} onClear={() => setDrilldown(null)} />
+      <InlineFilterBar drilldown={drilldown} setDrilldown={setDrilldown} filters={filters} setFilters={setFilters} />
 
       <div className="row row-4">
         <KpiTile label="Despesas s/ impostos" value={B.fmtK(totalDespesa)} sparkValues={dreFull.despSemImpMonth} sparkColor="var(--red)" tone="red" nonMonetary />
