@@ -2,7 +2,7 @@ module.exports = {
   cliente: {
     nome: "Antidoto Design",
     subdomain: "antidotodesign-bi",
-    coolify_app_uuid: "",
+    coolify_app_uuid: "dn2xjepbldi0m8gx5xgkfwjw",
     cor_primaria: "#a78bfa",
   },
   fontes: {
