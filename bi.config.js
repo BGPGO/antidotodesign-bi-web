@@ -12,7 +12,7 @@ module.exports = {
       contas_receber_file: "visao_contas_a_receber.xls",
     },
     drive: {
-      base_path: "G:/Meu Drive/BGP/CLIENTES/BI/ANTIDOTO DESIGN/BASES",
+      base_path: "G:/Meu Drive/BGP/CLIENTES/BI/225. ANTIDOTO DESIGN/BASES",
     },
   },
   pages: {

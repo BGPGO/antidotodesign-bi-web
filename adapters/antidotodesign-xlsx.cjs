@@ -5,21 +5,33 @@
  *   - visao_contas_a_receber.xls  (natureza R — receita)
  *   - visao_contas_a_pagar.xls    (natureza P — despesa)
  *
- * Colunas esperadas (Visão Contas a Pagar / Receber do Conta Azul):
- *   "Contato"                     — cliente/fornecedor
- *   "Nº do documento"             — número doc
- *   "Categoria"                   — categoria
- *   "Descrição"                   — descrição/observação
- *   "Data de emissão"             — data emissão
- *   "Data de vencimento"          — data vencimento
- *   "Data de pagamento"           — data pagamento (se quitado)
- *   "Data de competência"         — data competência
- *   "Valor"                       — valor total
- *   "Valor pago"                  — valor efetivamente pago
- *   "Valor em aberto"             — valor ainda em aberto
- *   "Situação"                    — "Quitado", "A vencer", "Vencido", etc.
- *   "Conta bancária"              — conta
- *   "Centro de custo"             — centro de custo
+ * Colunas (Receber):
+ *   "Nome do cliente"                      — cliente
+ *   "Categoria 1"                          — categoria
+ *   "Descrição"                            — descrição
+ *   "Data de competência"                  — competência (DD/MM/YYYY)
+ *   "Data de vencimento"                   — vencimento
+ *   "Data do último pagamento"             — data pagamento
+ *   "Situação"                             — "Quitado", "Em aberto", etc.
+ *   "Valor original da parcela (R$)"       — valor total
+ *   "Valor total recebido da parcela (R$)" — valor pago
+ *   "Valor da parcela em aberto (R$)"      — valor aberto
+ *   "Conta bancária"                       — conta
+ *   "Centro de Custo 1"                    — centro de custo
+ *
+ * Colunas (Pagar):
+ *   "Nome do fornecedor"                   — fornecedor
+ *   "Categoria 1"                          — categoria
+ *   "Descrição"                            — descrição
+ *   "Data de competência"                  — competência (DD/MM/YYYY)
+ *   "Data de vencimento"                   — vencimento
+ *   "Data do último pagamento"             — data pagamento
+ *   "Situação"                             — "Quitado", "Em aberto", etc.
+ *   "Valor original da parcela (R$)"       — valor total
+ *   "Valor total pago da parcela (R$)"     — valor pago
+ *   "Valor da parcela em aberto (R$)"      — valor aberto
+ *   "Conta bancária"                       — conta
+ *   "Centro de Custo 1"                    — centro de custo
  */
 'use strict';
 
@@ -51,15 +63,6 @@ function isoDate(v) {
   return null;
 }
 
-function findCol(row, ...candidates) {
-  for (const c of candidates) {
-    for (const key of Object.keys(row)) {
-      if (key.trim().toLowerCase() === c.toLowerCase()) return row[key];
-    }
-  }
-  return '';
-}
-
 function readSheet(filePath, natureza) {
   console.log(`  Lendo: ${filePath}`);
   const wb = XLSX.readFile(filePath);
@@ -71,37 +74,47 @@ function readSheet(filePath, natureza) {
   const movimentos = [];
 
   for (const r of rows) {
-    const valorTotal = Math.abs(num(findCol(r, 'Valor', 'Valor total', 'Valor (R$)')));
+    const valorTotal = Math.abs(num(r['Valor original da parcela (R$)']));
     if (valorTotal === 0) continue;
 
-    const situacao = String(findCol(r, 'Situação', 'Situacao', 'Status')).trim().toLowerCase();
+    const situacao = String(r['Situação'] || '').trim().toLowerCase();
     const realizado = REALIZADO_SET.has(situacao);
 
-    const categoria = String(findCol(r, 'Categoria', 'Categoria 1')).trim();
+    const categoria = String(r['Categoria 1'] || '').trim();
     // Excluir transferências entre contas
     if (/transfer[eê]ncia/i.test(categoria)) continue;
 
-    const dataEmissao = isoDate(findCol(r, 'Data de emissão', 'Data de emissao', 'Data emissão', 'Data emissao'));
-    const dataVenc = isoDate(findCol(r, 'Data de vencimento', 'Data vencimento'));
-    const dataPag = isoDate(findCol(r, 'Data de pagamento', 'Data pagamento'));
-    const dataComp = isoDate(findCol(r, 'Data de competência', 'Data de competencia', 'Data competência')) || dataEmissao;
+    const dataComp = isoDate(r['Data de competência']);
+    const dataVenc = isoDate(r['Data de vencimento']);
+    const dataPag = isoDate(r['Data do último pagamento']);
 
-    const valorPago = Math.abs(num(findCol(r, 'Valor pago')));
-    const valorAberto = Math.abs(num(findCol(r, 'Valor em aberto', 'Valor aberto')));
+    // Valor pago: coluna difere entre pagar e receber
+    const valorPagoRaw = natureza === 'R'
+      ? num(r['Valor total recebido da parcela (R$)'])
+      : num(r['Valor total pago da parcela (R$)']);
+    const valorPago = Math.abs(valorPagoRaw);
+    const valorAberto = Math.abs(num(r['Valor da parcela em aberto (R$)']));
 
-    const cliente = String(findCol(r, 'Contato', 'Nome do fornecedor/cliente', 'Cliente', 'Fornecedor')).trim();
-    const contaBancaria = String(findCol(r, 'Conta bancária', 'Conta bancaria', 'Conta')).trim();
-    const centroCusto = String(findCol(r, 'Centro de custo', 'Centro de Custo', 'Centro de Custo 1...27')).trim();
-    const descricao = String(findCol(r, 'Descrição', 'Descricao')).trim();
-    const numDoc = String(findCol(r, 'Nº do documento', 'Numero do documento', 'N° do documento')).trim();
+    // Cliente/fornecedor: coluna difere entre pagar e receber
+    const cliente = String(
+      natureza === 'R'
+        ? (r['Nome do cliente'] || '')
+        : (r['Nome do fornecedor'] || '')
+    ).trim();
+
+    const contaBancaria = String(r['Conta bancária'] || '').trim();
+    const centroCusto = String(r['Centro de Custo 1'] || '').trim();
+    const descricao = String(r['Descrição'] || '').trim();
+    const codRef = String(r['Código de referência'] || '').trim();
+    const observacoes = String(r['Observações'] || '').trim();
 
     movimentos.push({
       fonte: 'antidotodesign-xlsx',
       natureza,
       status: realizado ? 'PAGO' : 'A_PAGAR',
       realizado,
-      data_emissao: dataEmissao,
-      data_vencimento: dataVenc || dataEmissao,
+      data_emissao: dataComp,
+      data_vencimento: dataVenc || dataComp,
       data_pagamento: realizado ? (dataPag || dataVenc) : null,
       data_competencia: dataComp,
       valor_total: valorTotal,
@@ -112,8 +125,8 @@ function readSheet(filePath, natureza) {
       cliente,
       conta_corrente: contaBancaria,
       codigo_banco: '',
-      observacao: descricao,
-      num_documento: numDoc,
+      observacao: descricao || observacoes,
+      num_documento: codRef,
       tags: [],
     });
   }

@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-06-15T18:00:00.000Z",
+  "empresa": "Antidoto Design",
+  "periodo": "Fevereiro/2026",
+  "year": 2026,
+  "month": 2,
+  "filter": "realizado",
+  "secoes": {
+    "visao_geral": {
+      "title": "Visão Geral",
+      "analysis": "Fevereiro de 2026 marcou a recuperação financeira da Antidoto Design após o déficit de janeiro. A receita operacional atingiu R$ 553.787,13, integralmente proveniente de locação de equipamentos e cenografia. As despesas sem impostos totalizaram R$ 409.954,41 e os custos somaram R$ 44.686,05, resultando em EBIT de R$ 173.237,18. Com impostos praticamente nulos (R$ 9,27), o lucro líquido fechou em R$ 172.967,63, representando margem líquida de 31,2%, um patamar bastante saudável para o segmento.\n\nO resultado positivo de fevereiro é animador, porém sustentado por uma concentração extrema de receita: a BAYER respondeu por R$ 469 mil, o equivalente a 85% do faturamento total. Essa dependência de um único cliente representa o principal risco do período, pois qualquer atraso ou cancelamento de projeto com a BAYER teria impacto imediato e severo sobre o caixa. Os demais clientes somaram apenas R$ 84 mil, com VALIANT (R$ 30 mil), PBC NEWCO (R$ 28 mil) e Jazz Side (R$ 26 mil) ainda em patamares modestos.",
+      "error": null
+    },
+    "receita": {
+      "title": "Receita",
+      "analysis": "A receita de fevereiro totalizou R$ 553.787,13, toda classificada na categoria de locação, refletindo a natureza operacional da Antidoto Design como fornecedora de cenografia e estrutura para eventos corporativos. A BAYER liderou com folga, contribuindo com R$ 469 mil (84,7% do total). Na sequência aparecem VALIANT com R$ 30 mil (5,4%), PBC NEWCO com R$ 28 mil (5,1%) e Jazz Side com R$ 26 mil (4,7%). O faturamento de fevereiro superou significativamente a média esperada, impulsionado por projetos de grande porte para a indústria farmacêutica.\n\nA concentração de 85% da receita em um único cliente configura um cenário de alto risco comercial. A diversificação da carteira permanece como prioridade estratégica para os próximos meses. Os clientes secundários demonstram potencial de crescimento, mas ainda representam valores individuais modestos. A empresa deve buscar ampliar o volume de projetos com VALIANT, PBC NEWCO e Jazz Side para reduzir gradualmente a dependência da BAYER e estabilizar o faturamento em patamares menos voláteis.",
+      "error": null
+    },
+    "despesa": {
+      "title": "Despesa",
+      "analysis": "As despesas sem impostos de fevereiro somaram R$ 409.954,41, com custos adicionais de R$ 44.686,05. Os maiores desembolsos individuais foram os pagamentos a Gustavo (R$ 60 mil) e Diego (R$ 60 mil), seguidos por Terceiros PJ (R$ 43 mil), Dranger (R$ 39 mil) e Salários (R$ 28 mil). O custo com pessoal, somando salários, pró-labore e prestadores fixos, manteve-se estável em torno de R$ 160 mil, demonstrando controle sobre a folha. Os impostos foram irrelevantes no período, totalizando apenas R$ 9,27.\n\nA estrutura de despesas reflete a natureza de projetos da empresa, com grande participação de prestadores de serviço pessoa jurídica. Os pagamentos a Gustavo e Diego, ambos em R$ 60 mil, sugerem remuneração de sócios ou profissionais-chave atrelados à execução dos projetos. O desembolso com Terceiros PJ de R$ 43 mil e Dranger de R$ 39 mil indicam subcontratação relevante para atender a demanda do mês. A manutenção dos custos de pessoal em R$ 160 mil, mesmo com aumento expressivo de receita, demonstra boa alavancagem operacional.",
+      "error": null
+    },
+    "fluxo_caixa": {
+      "title": "Fluxo de Caixa",
+      "analysis": "O fluxo de caixa de fevereiro foi positivo em R$ 172.967,63, revertendo o cenário deficitário de janeiro e recompondo a posição de liquidez da empresa. As entradas de R$ 553.787,13, concentradas nos recebimentos da BAYER, superaram com folga as saídas totais de R$ 454.649,73 (despesas de R$ 409.954,41 mais custos de R$ 44.686,05 e impostos de R$ 9,27). A relação receita sobre despesa total ficou em 1,22x, indicando geração de caixa confortável no período.\n\nOs pagamentos mais relevantes foram direcionados a Diego (R$ 60 mil), Gustavo (R$ 55 mil como fornecedor), Visa (R$ 41 mil, possivelmente cartão corporativo com despesas diversas) e Dranger (R$ 39 mil). A concentração de recebimentos em um único cliente cria risco de descasamento de fluxo caso haja atraso no pagamento da BAYER. A empresa deve manter reserva de caixa equivalente a pelo menos um mês de despesas fixas (aproximadamente R$ 160 mil) para mitigar esse risco.",
+      "error": null
+    },
+    "tesouraria": {
+      "title": "Tesouraria",
+      "analysis": "A tesouraria encerrou fevereiro com geração líquida de R$ 172.967,63, resultado que contribuiu para a recuperação do saldo de caixa após o déficit registrado em janeiro. Os principais desembolsos a fornecedores foram Diego (R$ 60 mil), Gustavo (R$ 55 mil), Visa (R$ 41 mil) e Dranger (R$ 39 mil), totalizando R$ 195 mil concentrados em apenas quatro fornecedores. A gestão de pagamentos demonstrou organização adequada, sem indícios de atrasos ou acúmulo de passivos.\n\nA posição de tesouraria exige atenção especial nos próximos meses. A dependência de recebimentos da BAYER para financiar a operação cria fragilidade na gestão de caixa. O pagamento via Visa de R$ 41 mil merece acompanhamento detalhado para garantir que os gastos em cartão estejam alinhados com a política de despesas da empresa. A recomendação é constituir reserva de liquidez progressiva, aproveitando meses de resultado positivo como fevereiro para criar colchão financeiro.",
+      "error": null
+    },
+    "comparativo": {
+      "title": "Comparativo",
+      "analysis": "Fevereiro representou uma virada expressiva em relação a janeiro, quando a empresa havia registrado resultado deficitário. A receita de R$ 553.787,13 e o lucro líquido de R$ 172.967,63 colocaram a Antidoto Design em trajetória positiva no acumulado do ano. A margem líquida de 31,2% em fevereiro demonstra que, quando a receita atinge patamares elevados, a estrutura de custos da empresa permite alavancagem operacional significativa, já que os custos de pessoal permaneceram estáveis em torno de R$ 160 mil.\n\nA volatilidade entre janeiro (déficit) e fevereiro (lucro expressivo) evidencia a natureza sazonal do negócio de cenografia e eventos. A receita oscila conforme a carteira de projetos, enquanto as despesas fixas com pessoal e estrutura se mantêm relativamente constantes. O desafio da gestão é suavizar essa curva, buscando contratos recorrentes ou projetos de menor porte que garantam um piso de faturamento mensal. A concentração em BAYER amplifica essa volatilidade, tornando a diversificação de clientes ainda mais urgente para a estabilidade financeira.",
+      "error": null
+    }
+  },
+  "conclusao": "Fevereiro de 2026 foi um mês forte para a Antidoto Design, com receita de R$ 553.787,13 e lucro líquido de R$ 172.967,63, revertendo o déficit de janeiro e alcançando margem de 31,2%. O resultado foi impulsionado pelo projeto com a BAYER, que representou 85% do faturamento, evidenciando tanto o potencial de geração de valor da empresa quanto o risco de concentração de receita. As despesas com pessoal permaneceram controladas em torno de R$ 160 mil, e os principais fornecedores foram Diego (R$ 60 mil), Gustavo (R$ 55 mil), Visa (R$ 41 mil) e Dranger (R$ 39 mil). A prioridade para os próximos meses deve ser a diversificação da carteira de clientes e a constituição de reserva de caixa para suavizar a volatilidade inerente ao modelo de negócio baseado em projetos."
+}

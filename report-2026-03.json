@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-06-15T00:00:00.000Z",
+  "empresa": "ANTIDOTO DESIGN",
+  "periodo": "Março/2026",
+  "year": 2026,
+  "month": 3,
+  "filter": "realizado",
+  "secoes": {
+    "visao_geral": {
+      "title": "Visão Geral",
+      "analysis": "Em março de 2026, a Antidoto Design registrou receita operacional de R$ 234.461,10, patamar semelhante ao observado em janeiro e significativamente inferior ao desempenho de fevereiro. As despesas sem impostos totalizaram R$ 446.356,95, os custos operacionais atingiram R$ 76.796,42 e os impostos somaram R$ 700,43, resultando em EBIT negativo de R$ 171.847,61 e prejuízo líquido de R$ 172.184,94. A margem operacional permaneceu amplamente deficitária, evidenciando que a estrutura de custos e despesas continua desproporcionalmente elevada frente ao faturamento gerado no período.\n\nO resultado de março interrompe a trajetória de recuperação sinalizada em fevereiro e recoloca a empresa em patamar de receita próximo ao do início do ano. A combinação de queda na receita com aumento expressivo nos custos, que praticamente dobraram em relação ao mês anterior, agravou o desequilíbrio financeiro. A gestão precisa investigar os fatores que levaram à retração do faturamento e ao salto nos custos operacionais para evitar que esse padrão se repita nos próximos meses.",
+      "error": null
+    },
+    "receita": {
+      "title": "Receita",
+      "analysis": "A receita total de março foi de R$ 234.461,10, composta majoritariamente por locação de equipamentos e mobiliário, que respondeu por aproximadamente R$ 217 mil, e por serviços, que contribuíram com cerca de R$ 17 mil. A predominância da locação como fonte de faturamento é característica do modelo de negócio da Antidoto Design, porém a participação residual de serviços indica oportunidade de diversificação de receita que ainda não foi explorada de forma consistente.\n\nEntre os principais clientes do mês, destacaram-se Vertex com R$ 38 mil, Joia Experiências com R$ 37 mil, Vigodent com R$ 35 mil, GF2 com R$ 34 mil e VALIANT com R$ 30 mil. Um aspecto positivo é que a carteira de clientes apresentou maior diversificação em março, sem nenhum cliente individual ultrapassando R$ 38 mil, o que reduz a dependência de contratos isolados. Essa pulverização, entretanto, veio acompanhada de volume total menor, sugerindo que os projetos contratados foram de menor porte ou que houve redução no ticket médio dos eventos atendidos.",
+      "error": null
+    },
+    "despesa": {
+      "title": "Despesa",
+      "analysis": "As despesas sem impostos totalizaram R$ 446.356,95 em março, mantendo patamar elevado e incompatível com o nível de receita gerado. As maiores rubricas foram pagamentos a Gustavo com R$ 60 mil, Diego com R$ 55 mil, Dranger com R$ 48 mil, terceiros PJ com R$ 43 mil e salários com R$ 32 mil. A concentração de despesas em remuneração de pessoal e prestadores de serviço evidencia que a folha de pagamento direta e indireta continua sendo o principal fator de pressão sobre o resultado da empresa.\n\nOs custos operacionais atingiram R$ 76.796,42, representando quase o dobro do registrado em fevereiro. Esse salto é preocupante e pode estar associado a projetos específicos que demandaram maior volume de materiais ou logística. A carga tributária, por outro lado, permaneceu baixa em R$ 700,43, refletindo o resultado deficitário que limita a base de cálculo de impostos. A empresa precisa reavaliar a estrutura de custos fixos com pessoal, especialmente os contratos de prestadores PJ, buscando maior flexibilidade para ajustar esses gastos ao volume efetivo de projetos em execução.",
+      "error": null
+    },
+    "fluxo_caixa": {
+      "title": "Fluxo de Caixa",
+      "analysis": "O fluxo de caixa de março apresentou resultado fortemente negativo, com saídas superando as entradas em R$ 172.184,94. A receita de R$ 234.461,10 foi insuficiente para cobrir o montante combinado de despesas, custos e impostos, que totalizou R$ 523.853,80. O déficit mensal é expressivo e representa comprometimento relevante das reservas financeiras da empresa, caso existam, ou aumento do endividamento para financiar a operação corrente.\n\nA persistência de fluxo de caixa negativo ao longo do primeiro trimestre de 2026 configura uma situação que exige ação corretiva imediata. A empresa precisa equilibrar o ritmo de desembolsos com a capacidade real de geração de receita, priorizando a renegociação de prazos com fornecedores e a antecipação de recebíveis de clientes quando possível. O monitoramento semanal do caixa é recomendável para evitar surpresas e garantir que compromissos essenciais sejam honrados mesmo em meses de faturamento mais fraco.",
+      "error": null
+    },
+    "tesouraria": {
+      "title": "Tesouraria",
+      "analysis": "A posição de tesouraria em março reflete o impacto acumulado de três meses de operação deficitária. Com receitas consistentemente abaixo das despesas operacionais, a capacidade de manter reservas de caixa adequadas fica comprometida. A gestão de recebíveis torna-se ainda mais crítica nesse cenário, pois qualquer atraso nos pagamentos dos clientes amplifica a pressão sobre o caixa disponível para honrar compromissos com fornecedores e colaboradores.\n\nA diversificação da carteira de clientes observada em março, embora positiva do ponto de vista de risco de concentração, também implica maior complexidade na gestão de cobranças, com múltiplos vencimentos e condições comerciais a monitorar. Recomenda-se implementar controles mais rigorosos de contas a receber, com acompanhamento individualizado por cliente e ações proativas de cobrança para valores próximos do vencimento, de forma a maximizar a conversão do faturamento em caixa efetivo.",
+      "error": null
+    },
+    "comparativo": {
+      "title": "Comparativo",
+      "analysis": "Na comparação com fevereiro de 2026, março registrou retração significativa na receita, retornando ao patamar de aproximadamente R$ 234 mil, similar ao observado em janeiro. Essa oscilação indica que a empresa ainda não consolidou uma base recorrente de faturamento que sustente crescimento consistente mês a mês. O comportamento errático da receita sugere forte dependência do calendário de eventos e da sazonalidade de demanda por locação de mobiliário e equipamentos para o setor corporativo.\n\nPor outro lado, os custos operacionais praticamente dobraram em relação a fevereiro, passando de cerca de R$ 40 mil para R$ 76.796,42, sem correspondente aumento de receita que justificasse esse incremento. A combinação de receita em queda e custos em alta deteriorou ainda mais a margem operacional e ampliou o prejuízo líquido. Para reverter essa tendência, é fundamental que a Antidoto Design alinhe sua estrutura de custos ao volume real de projetos, evitando a manutenção de capacidade ociosa onerosa em períodos de menor demanda.",
+      "error": null
+    }
+  },
+  "conclusao": "O mês de março de 2026 representou um revés para a Antidoto Design, com receita operacional de R$ 234.461,10 retornando ao patamar de janeiro e custos operacionais praticamente dobrando em relação a fevereiro, resultando em prejuízo líquido de R$ 172.184,94. A carteira de clientes apresentou maior diversificação, com os cinco maiores respondendo por faixas entre R$ 30 mil e R$ 38 mil, o que é positivo para mitigação de risco de concentração, porém o volume total permaneceu insuficiente para cobrir a estrutura de custos e despesas. Recomenda-se, em primeiro lugar, uma revisão criteriosa dos contratos com prestadores de serviço PJ, que representam a maior parcela das despesas, buscando vincular remuneração ao volume efetivo de projetos em execução. Em segundo lugar, é necessário investigar as causas do salto nos custos operacionais para determinar se foi pontual ou estrutural. Por fim, a empresa deve intensificar esforços comerciais para ampliar a receita de serviços complementares à locação, diversificando fontes de faturamento e reduzindo a dependência de um único fluxo de receita."
+}

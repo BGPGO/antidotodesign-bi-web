@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-06-15T18:00:00.000Z",
+  "empresa": "Antidoto Design",
+  "periodo": "Junho/2026",
+  "year": 2026,
+  "month": 6,
+  "filter": "realizado",
+  "secoes": {
+    "visao_geral": {
+      "title": "Visão Geral",
+      "analysis": "Junho de 2026 marca o melhor resultado da Antidoto Design no semestre, com receita operacional de R$ 675.888,03 contra despesas sem impostos de apenas R$ 156.749,74 e custos de R$ 63.276,37. O EBIT atingiu R$ 522.926,90 e o lucro líquido ficou em R$ 522.784,67 após impostos de R$ 806,61, configurando uma margem líquida excepcional de 77,3%. A combinação de receita máxima com despesa mínima no semestre gerou o resultado mais expressivo do ano até o momento.\n\nO desempenho de junho se destaca não apenas pelo volume de faturamento, mas sobretudo pela contenção drástica de despesas, que caíram a R$ 157 mil — patamar significativamente inferior aos meses anteriores. A ausência de custos com colaboradores como Diego, Gustavo e Dranger neste mês contribuiu diretamente para a redução da folha de pessoal. Vale ressaltar que os dados de junho podem ainda ser parciais, e o resultado final poderá sofrer ajustes conforme novos lançamentos sejam consolidados.",
+      "error": null
+    },
+    "receita": {
+      "title": "Receita",
+      "analysis": "A receita operacional de R$ 675.888,03 foi amplamente sustentada pela linha de Locação, que respondeu por R$ 636 mil — representando 94% do faturamento total. Os Serviços complementaram com aproximadamente R$ 40 mil, mantendo o perfil de receita concentrado no core business de locação de mobiliário e cenografia. A BAYER liderou novamente a carteira de clientes com R$ 198 mil, consolidando-se como a principal conta da Antidoto ao longo do semestre.\n\nO ranking de clientes apresenta forte diversificação após a BAYER: Anahp contribuiu com R$ 104 mil, seguida por M M (R$ 73 mil), ID4! (R$ 50 mil) e Cia Brasileira de Educação (R$ 47 mil). A presença de cinco clientes com faturamento acima de R$ 47 mil demonstra uma carteira robusta e com boa dispersão de risco. O volume total de R$ 676 mil é o pico de receita no primeiro semestre de 2026 e reflete uma concentração favorável de projetos e eventos neste mês.",
+      "error": null
+    },
+    "despesa": {
+      "title": "Despesa",
+      "analysis": "As despesas sem impostos totalizaram R$ 156.749,74, o menor patamar do semestre e um dos fatores determinantes para a margem recorde de junho. Terceiros PJ liderou com R$ 30 mil, seguido por Custo Freelancer (R$ 18 mil), Salários (R$ 16 mil), Assistência Médica (R$ 12 mil) e Marketing (R$ 10 mil). A estrutura de custos ficou concentrada em prestadores de serviço e mão de obra terceirizada, com a folha de salários registrando valor atipicamente baixo.\n\nA queda expressiva nas despesas de pessoal é o destaque negativo a ser monitorado: a ausência de custos relacionados a Diego, Gustavo e Dranger neste mês explica a redução significativa da folha. Esse cenário pode indicar desligamentos, férias ou simplesmente defasagem nos lançamentos de um mês ainda em aberto. Os custos operacionais de R$ 63.276,37 também se mantiveram contidos, reforçando a eficiência da operação em junho. Recomenda-se confirmar se todos os lançamentos de despesas do mês já foram contabilizados antes de considerar este resultado como definitivo.",
+      "error": null
+    },
+    "fluxo_caixa": {
+      "title": "Fluxo de Caixa",
+      "analysis": "O fluxo de caixa de junho apresenta geração líquida de R$ 522.784,67, resultado de uma relação receita/despesa de 4,3x — isto é, a empresa faturou mais de quatro vezes o que gastou no mês. Essa proporção é extraordinária e reflete tanto a alta temporada de eventos quanto a contenção atípica de despesas. O EBIT de R$ 522.926,90 praticamente se converteu integralmente em lucro líquido, dado o valor irrisório de impostos no período (R$ 806,61).\n\nA geração de caixa robusta posiciona a Antidoto Design com folga financeira para absorver meses de sazonalidade mais fraca no segundo semestre. Com receita de R$ 676 mil versus despesas totais (incluindo custos e impostos) de R$ 221 mil, o mês entregou uma margem operacional superior a 77%. Ainda assim, é prudente considerar que dados parciais podem subestimar despesas ainda não lançadas, especialmente obrigações trabalhistas e tributárias que costumam ser contabilizadas no fechamento do mês.",
+      "error": null
+    },
+    "tesouraria": {
+      "title": "Tesouraria",
+      "analysis": "A posição de tesouraria em junho reflete a saúde financeira excepcional do mês, com os principais fornecedores apresentando valores controlados: Visa (R$ 21 mil), RICMS (R$ 13 mil), Porto Seguro (R$ 12 mil), Bicho Transparente (R$ 12 mil) e Mastercard (R$ 11 mil). A presença de bandeiras de cartão (Visa e Mastercard) entre os maiores fornecedores sugere despesas operacionais diversas pagas via cartão corporativo, enquanto RICMS indica recolhimento de imposto estadual e Porto Seguro refere-se a seguros da operação.\n\nO baixo volume total de obrigações com fornecedores reforça o cenário de mês leve em compromissos fixos. A ausência de grandes fornecedores de mão de obra ou subcontratação na lista dos top cinco é coerente com a redução de despesas de pessoal observada. A tesouraria deve manter atenção ao possível acúmulo de obrigações para julho, caso parte dos compromissos de junho ainda não tenha sido registrada, garantindo que a liquidez aparente não mascare passivos pendentes.",
+      "error": null
+    },
+    "comparativo": {
+      "title": "Comparativo",
+      "analysis": "Junho de 2026 é, de longe, o melhor mês da Antidoto Design no primeiro semestre. A receita de R$ 675.888,03 representa o pico absoluto do período, enquanto as despesas de R$ 156.749,74 configuram o vale — a combinação mais favorável possível para maximização de resultado. O lucro líquido de R$ 522.784,67 supera com folga qualquer mês anterior, e a margem líquida de 77,3% é incomparável com os demais períodos do semestre, onde custos de pessoal e operação costumam comprimir significativamente a rentabilidade.\n\nA diferença brutal entre receita e despesa (R$ 676 mil vs R$ 157 mil) deve ser analisada com a ressalva de que junho pode conter dados parciais, o que tenderia a subestimar despesas mais do que receitas — já que faturamentos de grandes clientes como BAYER e Anahp costumam ser registrados de forma pontual. Nos meses anteriores, a relação receita/despesa oscilava em patamares muito mais apertados, tornando junho um outlier positivo. Para fins de planejamento, recomenda-se não utilizar a margem de junho como referência recorrente, mas sim como evidência do potencial de rentabilidade da empresa em meses de alta demanda com estrutura enxuta.",
+      "error": null
+    }
+  },
+  "conclusao": "Junho de 2026 entrega o resultado mais expressivo da Antidoto Design no primeiro semestre, com receita operacional de R$ 675.888,03, despesas de R$ 156.749,74, custos de R$ 63.276,37 e lucro líquido de R$ 522.784,67 — margem de 77,3%. A BAYER lidera a carteira com R$ 198 mil, seguida por Anahp (R$ 104 mil), M M (R$ 73 mil), ID4! (R$ 50 mil) e Cia Brasileira de Educação (R$ 47 mil). A contenção drástica de despesas, especialmente na folha de pessoal, foi o segundo motor do resultado excepcional. Os dados de junho podem ainda ser parciais, e recomenda-se aguardar a consolidação final antes de utilizar os indicadores para decisões estratégicas. Ainda assim, o mês demonstra com clareza o potencial de geração de caixa da empresa quando a demanda por locação e serviços é elevada e a estrutura operacional se mantém enxuta."
+}

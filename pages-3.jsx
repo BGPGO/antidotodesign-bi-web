@@ -825,15 +825,16 @@ const PageValuation = () => {
     saveValuationPremissas({ ...VALUATION_DEFAULTS });
   };
 
-  // ----- Inputs derivados de window.BIT -----
-  // MONTH_DATA tem 12 meses do ano REF_YEAR ja. Receita YTD = soma dos meses
-  // que tem receita > 0 (i.e., os meses com dados realizados/orcados).
-  const MD = Array.isArray(B.MONTH_DATA) ? B.MONTH_DATA : [];
-  const monthsWithData = MD.filter(m => (m.receita || 0) > 0 || (m.despesa || 0) > 0);
+  // ----- Inputs derivados do DRE (mesmos valores das demais telas) -----
+  const REF_YEAR_VAL = window.REF_YEAR || new Date().getFullYear();
+  const dreVal = window.useDre ? window.useDre('realizado', null, REF_YEAR_VAL, REF_YEAR_VAL, null) : {};
+  const recOpMonth = dreVal.receitaOpMonth || Array(12).fill(0);
+  const despSIMonth = dreVal.despSemImpMonth || Array(12).fill(0);
+  const monthsWithData = recOpMonth.filter((v, i) => v > 0 || despSIMonth[i] > 0);
   const monthCount = Math.max(1, monthsWithData.length);
-  const totalRecYTD = MD.reduce((s, m) => s + (m.receita || 0), 0);
-  const totalDespYTD = MD.reduce((s, m) => s + (m.despesa || 0), 0);
-  const resultadoYTD = totalRecYTD - totalDespYTD;
+  const totalRecYTD = dreVal.receitaOp || 0;
+  const totalDespYTD = dreVal.despesasSemImpostos || 0;
+  const resultadoYTD = dreVal.lucroLiquido || 0;
   const margemEfetiva = totalRecYTD > 0 ? (resultadoYTD / totalRecYTD) * 100 : 0;
 
   // ----- DCF (5 anos) -----

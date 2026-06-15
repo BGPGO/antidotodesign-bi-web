@@ -43,6 +43,17 @@ try {
 }
 const PAGE_MODE_INJECT = `\n// Injetado por build-jsx.cjs a partir de bi.config.js > pages\nwindow.BI_PAGE_MODE = ${JSON.stringify(pageModes)};\n`;
 
+// Embute report*.json como window.BI_REPORTS pra funcionar sem servidor HTTP (file://)
+const reportFiles = fs.readdirSync(ROOT).filter(f => /^report(-\d{4}(-\d{2})?)?\.json$/.test(f));
+const reports = {};
+for (const f of reportFiles) {
+  try {
+    const data = JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+    reports[f] = data;
+  } catch (e) { /* skip */ }
+}
+const REPORTS_INJECT = `\n// Relatórios IA embutidos (gerados offline)\nwindow.BI_REPORTS = ${JSON.stringify(reports)};\n`;
+
 (async () => {
   // Cada .jsx redeclara `const { useState } = React;` no topo (era pra Babel-
   // standalone funcionar com escopo isolado por <script>). Concatenado vira
@@ -481,7 +492,7 @@ const PAGE_MODE_INJECT = `\n// Injetado por build-jsx.cjs a partir de bi.config.
 })();
 `;
 
-  const finalSource = PAGE_MODE_INJECT + concat + '\n' + APP_BODY;
+  const finalSource = PAGE_MODE_INJECT + REPORTS_INJECT + concat + '\n' + APP_BODY;
 
   const result = await esbuild.transform(finalSource, {
     loader: 'jsx',

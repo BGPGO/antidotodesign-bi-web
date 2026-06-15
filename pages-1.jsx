@@ -31,10 +31,71 @@ const SectionHeading = ({ strong, soft }) => (
   <h2 className="card-title">{[strong, soft].filter(Boolean).join(" ")}</h2>
 );
 
+// DRE helper — calcula indicadores Antidoto Design a partir de lista filtrada de TX
+function computeDre(txs) {
+  var receitaOp = 0, totalDespesas = 0, custos = 0;
+  var impostos = 0, impostosSobreLucro = 0, despesasRestantes = 0;
+  var despesasFinanceiras = 0, receitasFinanceiras = 0, reembolsoFinanceiro = 0;
+  var capex = 0;
+  var receitaOpMonth = Array(12).fill(0);
+  var custosMonth = Array(12).fill(0);
+  var capexMonth = Array(12).fill(0);
+  var despesaMonth = Array(12).fill(0);
+  var impostosMonth = Array(12).fill(0);
+  var impLucroMonth = Array(12).fill(0);
+
+  for (var i = 0; i < txs.length; i++) {
+    var kind = txs[i][0], mes = txs[i][1], cat = txs[i][3] || "", val = txs[i][5], cc = txs[i][8] || "";
+    var mIdx = mes ? parseInt(mes.slice(5, 7), 10) - 1 : -1;
+    if (kind === "r") {
+      if (cc === "Receitas") { receitaOp += val; if (mIdx >= 0 && mIdx < 12) receitaOpMonth[mIdx] += val; }
+      if (cat.indexOf("03.2.0 Rendimentos de Aplic") >= 0) receitasFinanceiras += val;
+      if (cat.indexOf("03.2.2 Reembolso_Despesas Financeiras") >= 0) reembolsoFinanceiro += val;
+    }
+    if (kind === "d") {
+      totalDespesas += val;
+      if (mIdx >= 0 && mIdx < 12) despesaMonth[mIdx] += val;
+      if (cat.indexOf("03.0") >= 0) { custos += val; if (mIdx >= 0 && mIdx < 12) custosMonth[mIdx] += val; }
+      if (cat.indexOf("02.0 PIS sobre Faturamento") >= 0 || cat.indexOf("02.0 COFINS sobre Faturamento") >= 0 || cat.indexOf("02.0 ISS sobre Faturamento") >= 0) {
+        impostos += val; if (mIdx >= 0 && mIdx < 12) impostosMonth[mIdx] += val;
+      }
+      if (cat === "02.3 IRPJ sobre Lucro - TRIMESTRAL" || cat === "02.3 CSLL sobre Lucro - TRIMESTRAL") {
+        impostosSobreLucro += val; if (mIdx >= 0 && mIdx < 12) impLucroMonth[mIdx] += val;
+      }
+      if (cat.indexOf("04.0") >= 0 || cat.indexOf("04.1") >= 0 || cat.indexOf("04.2") >= 0 ||
+          cat.indexOf("04.3") >= 0 || cat.indexOf("04.4") >= 0 || cat.indexOf("06.0") >= 0 || cat.indexOf("07.0") >= 0) despesasRestantes += val;
+      if (cat.indexOf("05.0") >= 0) despesasFinanceiras += val;
+      if (cat.indexOf("08.0") >= 0 || /equip|veicul|maquin|imobili|investimento|ativo.*fixo|bens/i.test(cat)) { capex += val; if (mIdx >= 0 && mIdx < 12) capexMonth[mIdx] += val; }
+    }
+  }
+  var despesasSemImpostos = totalDespesas - impostos - impostosSobreLucro;
+  var despSemImpMonth = despesaMonth.map(function(v, i) { return v - impostosMonth[i] - impLucroMonth[i]; });
+  var receitaOpLiquida = receitaOp - impostos;
+  var ebit = receitaOpLiquida - custos - despesasRestantes;
+  var lucroLiquido = ebit + receitasFinanceiras + reembolsoFinanceiro - despesasFinanceiras - impostosSobreLucro + 21.39;
+  return {
+    receitaOp, despesasSemImpostos, custos, impostos, impostosSobreLucro,
+    despesasRestantes, despesasFinanceiras, receitasFinanceiras, reembolsoFinanceiro,
+    receitaOpLiquida, ebit, lucroLiquido, capex, totalDespesas,
+    receitaOpMonth, despSemImpMonth, custosMonth, capexMonth
+  };
+}
+
+// Hook: filtra ALL_TX e computa DRE
+function useDre(statusFilter, drilldown, year, refYear, filters) {
+  return useMemo(function() {
+    var rg = (filters && filters.regime === "competencia") ? "k" : "c";
+    var sf = statusFilter || "realizado";
+    var txs = window.filterTx ? window.filterTx(window.ALL_TX || [], sf, drilldown, rg === "k" ? "competencia" : "caixa", filters) : [];
+    if (!drilldown) txs = txs.filter(function(r) { return r[1] && r[1].startsWith(String(year || refYear)); });
+    return computeDre(txs);
+  }, [statusFilter, drilldown, year, refYear, filters]);
+}
+
 // Side-by-side monthly bars (Receita green / Despesa red) with floating value chips
 const OverviewBars = ({ data, height = 220, year = "2026", onBarClick, activeIdx }) => {
   const B = window.BIT;
-  const max = Math.max(...data.map(d => Math.max(d.receita, d.despesa)), 1);
+  const max = Math.max(...data.map(d => Math.max(d.receita, d.despesa, d.custos || 0)), 1);
   // Escala dinâmica: calcula step pra ter no máximo 5 ticks
   const magnitude = Math.pow(10, Math.floor(Math.log10(max || 1)));
   const rawStep = max / 4;
@@ -77,6 +138,9 @@ const OverviewBars = ({ data, height = 220, year = "2026", onBarClick, activeIdx
                   <div className="ov-bar red" style={{ height: `${dH}%` }} title={`Despesa: ${B.fmt(d.despesa)}`}>
                     <span className="ov-bar-chip">{fmtChip(d.despesa)}</span>
                   </div>
+                  {(d.custos > 0) && <div className="ov-bar amber" style={{ height: `${(d.custos / niceMax) * 100}%` }} title={`Custos: ${B.fmt(d.custos)}`}>
+                    <span className="ov-bar-chip">{fmtChip(d.custos)}</span>
+                  </div>}
                 </div>
               </div>
             );
@@ -205,46 +269,25 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
   const current = indicatorSeries[indicator];
   const monthLabels = B.MONTHS_FULL.map(m => `${m.charAt(0).toUpperCase() + m.slice(1, 3)} ${refYear}`);
 
-  // Calcular indicadores DRE a partir de ALL_TX filtrado
-  const dre = useMemo(() => {
-    const rg = (filters && filters.regime === "competencia") ? "k" : "c";
-    const sf = statusFilter || "realizado";
-    var txs = (window.ALL_TX || []).filter(r => r[9] === rg);
-    if (sf === "realizado") txs = txs.filter(r => r[6] === 1);
-    else if (sf === "a_pagar_receber") txs = txs.filter(r => r[6] === 0);
-    txs = txs.filter(r => r[1] && r[1].startsWith(String(year || refYear)));
-    // Apply extra filters (dateFrom, dateTo, categoria, dia)
-    if (filters && window.filterTx) txs = window.filterTx(window.ALL_TX || [], sf, drilldown, rg, filters);
-    if (!drilldown) txs = txs.filter(r => r[1] && r[1].startsWith(String(year || refYear)));
-
-    var impostos = 0, capex = 0, juros = 0;
-    var reImposto = /imposto|icms|pis[\s\/]|cofins|iss[\s\/]|ipi[\s\/]|irpj|irrf|csll|simples|tribut|inss|fgts|dedu[cç][oõ]|DAS\b|reten[cç][aã]o/i;
-    var reCapex = /equip|veicul|ve[ií]culo|maquin|imobili|investimento|bens/i;
-    var reJuros = /amortiza|empr[eé]stimo|juros|financ/i;
-    for (var i = 0; i < txs.length; i++) {
-      if (txs[i][0] !== "d") continue;
-      var cat = txs[i][3] || "";
-      var val = txs[i][5];
-      if (cat.startsWith("02.") || reImposto.test(cat)) impostos += val;
-      else if (cat.startsWith("05.") || reCapex.test(cat)) capex += val;
-      else if (cat.startsWith("10.") || reJuros.test(cat)) juros += val;
-    }
-    // EBITDA: lucro antes dos juros e impostos = Receita - (Despesa - Impostos - Juros/Amort)
-    var ebitda = B.TOTAL_RECEITA - (B.TOTAL_DESPESA - impostos - juros);
-    // Resultado Operacional: lucro depois dos juros e impostos = EBITDA - Impostos - Juros
-    var resultOp = ebitda - impostos - juros;
-    return { impostos, capex, juros, ebitda, resultOp };
-  }, [B, statusFilter, filters, year, drilldown, refYear]);
+  const dre = useDre(statusFilter, drilldown, year, refYear, filters);
 
   const indicadores = [
-    { value: B.TOTAL_RECEITA, label: "Soma de receita",     kind: "receita" },
-    { value: B.TOTAL_DESPESA, label: "Soma de despesa",     kind: "despesa" },
-    { value: B.VALOR_LIQUIDO, label: "Valor líquido",       kind: B.VALOR_LIQUIDO >= 0 ? "receita" : "despesa" },
-    { value: dre.impostos,    label: "Impostos",             kind: "despesa" },
-    { value: dre.ebitda,      label: "EBITDA",               kind: dre.ebitda >= 0 ? "receita" : "despesa" },
-    { value: dre.resultOp,    label: "Resultado operacional", kind: dre.resultOp >= 0 ? "receita" : "despesa" },
-    { value: dre.capex,       label: "CAPEX",                kind: "despesa" },
+    { value: dre.receitaOp,           label: "Receita operacional",  kind: "receita" },
+    { value: dre.despesasSemImpostos, label: "Despesas s/ impostos", kind: "despesa" },
+    { value: dre.custos,              label: "Custos",               kind: "despesa" },
+    { value: dre.impostos,            label: "Impostos",             kind: "despesa" },
+    { value: dre.ebit,                label: "EBIT",                 kind: dre.ebit >= 0 ? "receita" : "despesa" },
+    { value: dre.capex,               label: "CAPEX",                kind: "despesa" },
+    { value: dre.lucroLiquido,        label: "Lucro líquido",        kind: dre.lucroLiquido >= 0 ? "receita" : "despesa" },
   ];
+
+  // Dados do gráfico alinhados com KPIs DRE
+  const chartData = BFull.MONTH_DATA.map((m, i) => ({
+    ...m,
+    receita: dre.receitaOpMonth[i] || 0,
+    despesa: dre.despSemImpMonth[i] || 0,
+    custos: dre.custosMonth[i] || 0,
+  }));
 
   const statusLabel = statusFilter === "realizado" ? "realizado (PAGO)" :
                       statusFilter === "a_pagar_receber" ? "pendente (A vencer/receber)" : "tudo (pago + pendente)";
@@ -278,12 +321,14 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
             </div>
           </div>
 
-          <div className={`card ${B.VALOR_LIQUIDO >= 0 ? "resultado-card" : "resultado-card resultado-card-neg"}`}>
+          <div className={`card ${dre.lucroLiquido >= 0 ? "resultado-card" : "resultado-card resultado-card-neg"}`}>
             <SectionHeading strong="RESULTADO" soft="GERAL" />
-            <div className="kpi-stack-value resultado-val">{B.fmt(B.VALOR_LIQUIDO)}</div>
-            <div className="kpi-stack-label">Valor líquido</div>
-            <div className="kpi-stack-pct" style={{ color: B.VALOR_LIQUIDO >= 0 ? "var(--green)" : "var(--red)" }}>{B.MARGEM_LIQUIDA.toFixed(2).replace(".", ",")}%</div>
-            <div className="kpi-stack-label">Margem Líquida</div>
+            <div className="kpi-stack-value resultado-val">{B.fmt(dre.lucroLiquido)}</div>
+            <div className="kpi-stack-label">Lucro líquido</div>
+            <div className="kpi-stack-pct" style={{ color: dre.receitaOp > 0 ? (dre.lucroLiquido >= 0 ? "var(--green)" : "var(--red)") : "var(--mute)" }}>
+              {dre.receitaOp > 0 ? `${((dre.lucroLiquido / dre.receitaOp) * 100).toFixed(2).replace(".", ",")}%` : "—"}
+            </div>
+            <div className="kpi-stack-label">Margem líquida</div>
           </div>
         </div>
 
@@ -291,21 +336,26 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
         <div style={{ display: "grid", gap: 16, minWidth: 0 }}>
           <div className="card">
             <div className="card-title-row" style={{ marginBottom: 10 }}>
-              <h2 className="card-title">Receitas e despesas</h2>
+              <h2 className="card-title">Receitas, despesas e custos</h2>
             </div>
-            <div className="legend-pills">
+            <div className="legend-pills" style={{ flexWrap: "wrap" }}>
               <span className="legend-pill green">
                 <span className="dot" />
-                <span className="lbl">Soma de receita</span>
+                <span className="lbl">Receita</span>
                 <span className="val">{B.fmtK(B.TOTAL_RECEITA)}</span>
               </span>
               <span className="legend-pill red">
                 <span className="dot" />
-                <span className="lbl">Soma de despesas</span>
+                <span className="lbl">Despesa</span>
                 <span className="val">{B.fmtK(B.TOTAL_DESPESA)}</span>
               </span>
+              <span className="legend-pill amber">
+                <span className="dot" />
+                <span className="lbl">Custos</span>
+                <span className="val">{B.fmtK(dre.custos)}</span>
+              </span>
             </div>
-            <OverviewBars data={BFull.MONTH_DATA} height={220} year={String(refYear)} onBarClick={handleBarMes} activeIdx={activeMonthIdx} />
+            <OverviewBars data={chartData} height={220} year={String(refYear)} onBarClick={handleBarMes} activeIdx={activeMonthIdx} />
           </div>
 
           <div className="card">
@@ -336,13 +386,14 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
 
 const PageIndicators = ({ filters, statusFilter, drilldown, setDrilldown, year, month }) => {
   const B = useMemo(() => window.getBit(statusFilter, drilldown, year, month, filters && filters.regime, filters), [statusFilter, drilldown, year, month, filters]);
-  const totalReceita = B.TOTAL_RECEITA;
-  const totalDespesa = B.TOTAL_DESPESA;
-  const valorLiq = B.VALOR_LIQUIDO;
-  const margemLiq = B.MARGEM_LIQUIDA;
   const refYear = (B.META && B.META.ref_year) || new Date().getFullYear();
-  // sem segregacao de impostos no Omie sem mapeamento de categorias, deixamos 0 e mostramos "—" se nao houver dado
-  const margemSeries = B.MONTH_DATA.map(m => m.receita > 0 ? ((m.receita - m.despesa) / m.receita) * 100 : 0);
+  const dre = useDre(statusFilter, drilldown, year, refYear, filters);
+  const totalReceita = dre.receitaOp;
+  const totalDespesa = dre.despesasSemImpostos;
+  const valorLiq = dre.lucroLiquido;
+  const margemLiq = totalReceita > 0 ? (valorLiq / totalReceita) * 100 : 0;
+  const dreFull = useDre(statusFilter, null, year, refYear, filters);
+  const margemSeries = dreFull.receitaOpMonth.map((r, i) => r > 0 ? ((r - dreFull.despSemImpMonth[i]) / r) * 100 : 0);
 
   const handleBarMes = (d, i) => {
     const mm = String(i + 1).padStart(2, "0");
@@ -406,7 +457,7 @@ const PageIndicators = ({ filters, statusFilter, drilldown, setDrilldown, year, 
         </div>
         <div className="card">
           <h2 className="card-title">Receita vs Despesa por mês</h2>
-          <MonthlyBars data={B.MONTH_DATA} height={240} onBarClick={handleBarMes} activeIdx={activeMonthIdx} />
+          <MonthlyBars data={B.MONTHS_FULL.map((m, i) => ({ m, receita: dreFull.receitaOpMonth[i] || 0, despesa: dreFull.despSemImpMonth[i] || 0 }))} height={240} onBarClick={handleBarMes} activeIdx={activeMonthIdx} />
         </div>
       </div>
     </div>
@@ -418,17 +469,20 @@ const PageReceita = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
   const BFull = useMemo(() => window.getBit(statusFilter, null, year, month, filters && filters.regime, filters), [statusFilter, year, month, filters]);
   const [range, setRange] = useState("12M");
   const refYear = (B.META && B.META.ref_year) || new Date().getFullYear();
-  const mesesComDados = B.MONTH_DATA.filter(m => m.receita > 0).length || 1;
-  const mediaMes = B.TOTAL_RECEITA / mesesComDados;
+  const dre = useDre(statusFilter, drilldown, year, refYear, filters);
+  const dreFull = useDre(statusFilter, null, year, refYear, filters);
+  const totalReceita = dre.receitaOp;
+  const mesesComDados = dreFull.receitaOpMonth.filter(v => v > 0).length || 1;
+  const mediaMes = totalReceita / mesesComDados;
   const numClientes = useMemo(() => {
     var rg = (filters && filters.regime === "competencia") ? "k" : "c";
     var seen = new Set();
     var txs = window.filterTx ? window.filterTx(window.ALL_TX || [], statusFilter || "realizado", drilldown, rg, filters) : [];
     txs = txs.filter(r => r[1] && r[1].startsWith(String(year || refYear)));
-    for (var i = 0; i < txs.length; i++) { if (txs[i][0] === "r" && txs[i][4]) seen.add(txs[i][4]); }
+    for (var i = 0; i < txs.length; i++) { if (txs[i][0] === "r" && txs[i][8] === "Receitas" && txs[i][4]) seen.add(txs[i][4]); }
     return seen.size;
   }, [filters, statusFilter, drilldown, year, refYear]);
-  const ticket = numClientes > 0 ? B.TOTAL_RECEITA / numClientes : 0;
+  const ticket = numClientes > 0 ? totalReceita / numClientes : 0;
 
   // Drilldown handlers
   const handleBarMes = (v, i) => {
@@ -452,7 +506,7 @@ const PageReceita = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
   const extratoFiltrado = window.applyDrilldown(extratoReceitas, drilldown);
   const totalFiltrado = drilldown
     ? extratoFiltrado.reduce((s, e) => s + e[4], 0)
-    : B.TOTAL_RECEITA;
+    : totalReceita;
 
   return (
     <div className="page">
@@ -469,15 +523,15 @@ const PageReceita = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
       <DrilldownBadge drilldown={drilldown} onClear={() => setDrilldown(null)} />
 
       <div className="row row-4">
-        <KpiTile label="Receita total" value={B.fmtK(B.TOTAL_RECEITA)} sparkValues={B.MONTH_DATA.map(m => m.receita)} sparkColor="var(--green)" tone="green" nonMonetary />
-        <KpiTile label="Média por mês" value={B.fmtK(mediaMes)} sparkValues={B.MONTH_DATA.map(m => m.receita)} sparkColor="var(--cyan)" tone="cyan" nonMonetary />
-        <KpiTile label="Clientes" value={String(numClientes)} sparkValues={B.MONTH_DATA.map(m => m.receita > 0 ? 1 : 0)} sparkColor="var(--cyan)" tone="cyan" nonMonetary />
-        <KpiTile label="Ticket médio" value={B.fmtK(ticket)} sparkValues={B.MONTH_DATA.map(m => m.receita / 30)} sparkColor="var(--green)" tone="green" nonMonetary />
+        <KpiTile label="Receita operacional" value={B.fmtK(totalReceita)} sparkValues={dreFull.receitaOpMonth} sparkColor="var(--green)" tone="green" nonMonetary />
+        <KpiTile label="Média por mês" value={B.fmtK(mediaMes)} sparkValues={dreFull.receitaOpMonth} sparkColor="var(--cyan)" tone="cyan" nonMonetary />
+        <KpiTile label="Clientes" value={String(numClientes)} sparkValues={dreFull.receitaOpMonth.map(v => v > 0 ? 1 : 0)} sparkColor="var(--cyan)" tone="cyan" nonMonetary />
+        <KpiTile label="Ticket médio" value={B.fmtK(ticket)} sparkValues={dreFull.receitaOpMonth.map(v => v / 30)} sparkColor="var(--green)" tone="green" nonMonetary />
       </div>
 
       <div className="card">
-        <h2 className="card-title">Receita por mês</h2>
-        <SingleBars values={BFull.MONTH_DATA.map(m => m.receita)} labels={BFull.MONTHS_FULL} color="green" height={240}
+        <h2 className="card-title">Receita operacional por mês</h2>
+        <SingleBars values={dreFull.receitaOpMonth} labels={BFull.MONTHS_FULL} color="green" height={240}
           onBarClick={handleBarMes} activeIdx={activeMonthIdx} />
       </div>
 
@@ -531,8 +585,10 @@ const PageDespesa = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
   const BFull = useMemo(() => window.getBit(statusFilter, null, year, month, filters && filters.regime, filters), [statusFilter, year, month, filters]);
   const [range, setRange] = useState("12M");
   const refYear = (B.META && B.META.ref_year) || new Date().getFullYear();
-  const totalDespesa = B.TOTAL_DESPESA;
-  const mesesComDados = B.MONTH_DATA.filter(m => m.despesa > 0).length || 1;
+  const dre = useDre(statusFilter, drilldown, year, refYear, filters);
+  const dreFull = useDre(statusFilter, null, year, refYear, filters);
+  const totalDespesa = dre.despesasSemImpostos;
+  const mesesComDados = dreFull.despSemImpMonth.filter(v => v > 0).length || 1;
   const mediaMes = totalDespesa / mesesComDados;
   const numFornec = useMemo(() => {
     var rg = (filters && filters.regime === "competencia") ? "k" : "c";
@@ -580,15 +636,15 @@ const PageDespesa = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
       <DrilldownBadge drilldown={drilldown} onClear={() => setDrilldown(null)} />
 
       <div className="row row-4">
-        <KpiTile label="Despesas totais" value={B.fmtK(totalDespesa)} sparkValues={B.MONTH_DATA.map(m => m.despesa)} sparkColor="var(--red)" tone="red" nonMonetary />
-        <KpiTile label="Média por mês" value={B.fmtK(mediaMes)} sparkValues={B.MONTH_DATA.map(m => m.despesa)} sparkColor="var(--red)" tone="red" nonMonetary />
-        <KpiTile label="Fornecedores" value={String(numFornec)} sparkValues={B.MONTH_DATA.map(m => m.despesa > 0 ? 1 : 0)} sparkColor="var(--cyan)" tone="cyan" nonMonetary />
-        <KpiTile label="Média de despesa" value={B.fmtK(mediaDesp)} sparkValues={B.MONTH_DATA.map(m => m.despesa / 30)} sparkColor="var(--red)" tone="red" nonMonetary />
+        <KpiTile label="Despesas s/ impostos" value={B.fmtK(totalDespesa)} sparkValues={dreFull.despSemImpMonth} sparkColor="var(--red)" tone="red" nonMonetary />
+        <KpiTile label="Média por mês" value={B.fmtK(mediaMes)} sparkValues={dreFull.despSemImpMonth} sparkColor="var(--red)" tone="red" nonMonetary />
+        <KpiTile label="Fornecedores" value={String(numFornec)} sparkValues={dreFull.despSemImpMonth.map(v => v > 0 ? 1 : 0)} sparkColor="var(--cyan)" tone="cyan" nonMonetary />
+        <KpiTile label="Média de despesa" value={B.fmtK(mediaDesp)} sparkValues={dreFull.despSemImpMonth.map(v => v / 30)} sparkColor="var(--red)" tone="red" nonMonetary />
       </div>
 
       <div className="card">
-        <h2 className="card-title">Despesa por mês</h2>
-        <SingleBars values={BFull.MONTH_DATA.map(m => m.despesa)} labels={BFull.MONTHS_FULL} color="red" height={240}
+        <h2 className="card-title">Despesas s/ impostos por mês</h2>
+        <SingleBars values={dreFull.despSemImpMonth} labels={BFull.MONTHS_FULL} color="red" height={240}
           onBarClick={handleBarMes} activeIdx={activeMonthIdx} />
       </div>
 
@@ -637,4 +693,4 @@ const PageDespesa = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
   );
 };
 
-Object.assign(window, { PageOverview, PageIndicators, PageReceita, PageDespesa, RangePills });
+Object.assign(window, { PageOverview, PageIndicators, PageReceita, PageDespesa, RangePills, computeDre, useDre });

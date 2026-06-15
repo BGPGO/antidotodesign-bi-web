@@ -1105,6 +1105,8 @@ table.t tr.total td {
   transition: filter 150ms;
 }
 .ov-bar.red { background: #ef4444; }
+.ov-bar.amber { background: var(--amber); }
+.ov-bar.purple { background: var(--violet); }
 .ov-bar:hover { filter: brightness(1.15); }
 .ov-bar-chip {
   position: absolute;
@@ -1213,6 +1215,8 @@ table.t tr.total td {
 .legend-pill.green .dot { background: var(--green); box-shadow: 0 0 8px -1px rgba(16,185,129,0.7); }
 .legend-pill.red   .dot { background: var(--red);   box-shadow: 0 0 8px -1px rgba(239,68,68,0.65); }
 .legend-pill.cyan  .dot { background: var(--cyan);  box-shadow: 0 0 8px -1px rgba(34,211,238,0.65); }
+.legend-pill.amber .dot { background: var(--amber); box-shadow: 0 0 8px -1px rgba(245,158,11,0.65); }
+.legend-pill.purple .dot { background: var(--violet); box-shadow: 0 0 8px -1px rgba(167,139,250,0.65); }
 .legend-pill .lbl  { color: var(--text-2); font-weight: 500; }
 .legend-pill .val  {
   color: var(--text);

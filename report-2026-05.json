@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-06-15T20:00:00.000Z",
+  "empresa": "Antidoto Design",
+  "periodo": "Maio/2026",
+  "year": 2026,
+  "month": 5,
+  "filter": "realizado",
+  "secoes": {
+    "visao_geral": {
+      "title": "Visão Geral",
+      "analysis": "Maio de 2026 registrou a maior receita operacional do semestre — R$ 567.636,91 — impulsionada principalmente por Locação (R$ 516 mil), que responde por mais de 90% do faturamento, complementada por Serviços (R$ 49 mil) e Locação+Serviço (R$ 3 mil). No entanto, as despesas sem impostos alcançaram R$ 681.838,46 e os custos somaram R$ 87.458,79, resultando em EBIT de -R$ 21.999,70 e prejuízo líquido de -R$ 32.899,49. Os impostos foram praticamente irrelevantes no mês (R$ 9,27).\n\nApesar do faturamento recorde, o resultado foi negativo em razão de uma explosão nos custos de pessoal e investimentos em ativos. Os três maiores centros de despesa individuais — Diego (R$ 115 mil), Gustavo (R$ 111 mil) e Dranger (R$ 92 mil) — somaram R$ 318 mil, quase o dobro dos patamares habituais. A esses se somaram investimentos em CAPEX: Máquinas/Equipamentos no ativo (R$ 62 mil) e a aquisição junto à Displax SA (R$ 59 mil). A combinação de pico de receita com pico de gastos gerou um mês de resultado operacional negativo, porém com caráter predominantemente investidor.",
+      "error": null
+    },
+    "receita": {
+      "title": "Receita",
+      "analysis": "A receita operacional de R$ 567.636,91 foi a mais alta do semestre, com forte concentração em Locação (R$ 516 mil, 90,9% do total). Serviços contribuíram com R$ 49 mil (8,6%) e a categoria mista Locação+Serviço com R$ 3 mil (0,5%). A carteira de clientes apresentou boa diversificação: MAHLE liderou com R$ 78 mil, seguida por P&G (R$ 69 mil), ESFERA (R$ 55 mil), LEVAIN (R$ 52 mil) e ID4! (R$ 50 mil). Nenhum cliente isoladamente ultrapassou 14% da receita total, o que reduz o risco de concentração.\n\nA presença de grandes marcas multinacionais como MAHLE e P&G entre os maiores clientes sinaliza solidez na proposta de valor da Antidoto Design no segmento de locação de equipamentos e soluções de design. A diversificação entre cinco clientes relevantes, todos na faixa de R$ 50-78 mil, indica uma base comercial equilibrada. A predominância absoluta de Locação no mix de receita, contudo, merece atenção estratégica: uma maior participação de Serviços poderia elevar as margens, dado que serviços tipicamente carregam menor custo direto que locação de ativos físicos.",
+      "error": null
+    },
+    "despesa": {
+      "title": "Despesa",
+      "analysis": "As despesas sem impostos totalizaram R$ 681.838,46, o maior patamar do semestre. O principal driver foram os custos com pessoal-chave: Diego liderou com R$ 115 mil, seguido por Gustavo (R$ 111 mil) e Dranger (R$ 92 mil) — juntos, R$ 318 mil, representando quase 47% das despesas totais. Estes valores praticamente dobraram em relação aos meses anteriores, sugerindo pagamentos extraordinários, bônus ou acumulação de parcelas. Terceiros PJ completaram o quadro com R$ 43 mil.\n\nAlém do pessoal, o mês foi marcado por investimentos significativos em ativos: Máquinas/Equipamentos no ativo somaram R$ 62 mil, e a aquisição junto à Displax SA alcançou R$ 59 mil, totalizando R$ 121 mil em CAPEX. Entre os principais fornecedores, Diego (R$ 115 mil), Gustavo (R$ 106 mil) e Dranger (R$ 92 mil) concentraram os maiores volumes, seguidos por Displax SA (R$ 59 mil) e Mastercard (R$ 27 mil). A estrutura de despesas de maio reflete claramente um mês atípico de investimento, não uma deterioração operacional recorrente.",
+      "error": null
+    },
+    "fluxo_caixa": {
+      "title": "Fluxo de Caixa",
+      "analysis": "O fluxo de caixa de maio foi pressionado por saídas totais de R$ 769.306,52 (despesas R$ 681.838,46 + custos R$ 87.458,79 + impostos R$ 9,27) contra entradas de R$ 567.636,91, gerando déficit operacional de -R$ 201.669,61 antes de ajustes. O EBIT de -R$ 21.999,70 e o prejuízo líquido de -R$ 32.899,49 confirmam que o mês consumiu caixa. A magnitude das saídas extraordinárias — R$ 318 mil em pessoal acima do padrão e R$ 121 mil em CAPEX — explica a pressão.\n\nÉ fundamental separar o componente recorrente do não-recorrente neste fluxo. Se os pagamentos elevados a Diego, Gustavo e Dranger representam parcelas extraordinárias (bônus, retroativos ou quitações), o fluxo operacional normalizado seria significativamente mais saudável. Da mesma forma, os investimentos em máquinas e equipamentos da Displax são gastos de capital que gerarão receita futura de locação. A empresa deve monitorar de perto a posição de caixa nos próximos meses para garantir que estes investimentos não comprometam a liquidez operacional.",
+      "error": null
+    },
+    "tesouraria": {
+      "title": "Tesouraria",
+      "analysis": "A tesouraria de maio enfrentou o maior volume de desembolsos do semestre, com fornecedores concentrando valores expressivos: Diego (R$ 115 mil), Gustavo (R$ 106 mil), Dranger (R$ 92 mil), Displax SA (R$ 59 mil) e Mastercard (R$ 27 mil). A presença da Mastercard entre os maiores fornecedores pode indicar uso de cartão corporativo para despesas operacionais diversas, merecendo acompanhamento para garantir rastreabilidade adequada das compras.\n\nA aquisição de equipamentos da Displax SA (R$ 59 mil) — empresa portuguesa especializada em tecnologia interativa — sugere investimento em capacidade produtiva ou renovação do parque de locação, alinhado ao core business da Antidoto Design. A gestão de tesouraria precisa priorizar a recomposição do caixa em junho, considerando que o nível de desembolsos de maio foi atipicamente elevado. Negociações de prazos com fornecedores recorrentes e a antecipação de recebíveis de clientes como MAHLE e P&G podem ser alavancas para equilibrar a posição de caixa.",
+      "error": null
+    },
+    "comparativo": {
+      "title": "Comparativo",
+      "analysis": "Maio representou um paradoxo no semestre: a maior receita (R$ 567.636,91) coexistiu com o pior resultado líquido (-R$ 32.899,49). Enquanto o faturamento atingiu o pico, as despesas cresceram proporcionalmente mais, eliminando a margem operacional. O EBIT de -R$ 21.999,70 contrasta com meses anteriores em que a operação gerava resultado positivo com receitas menores, evidenciando que o problema de maio não foi comercial, mas de gestão de custos e timing de investimentos.\n\nA boa notícia é que os fatores que pressionaram o resultado são predominantemente não-recorrentes: o salto nos pagamentos de pessoal (Diego, Gustavo e Dranger quase dobrando) e o CAPEX em máquinas e Displax são investimentos pontuais. A diversificação da carteira de clientes — cinco clientes acima de R$ 50 mil — é um ativo estratégico relevante. Para junho, a expectativa é de normalização dos custos de pessoal e absorção do CAPEX, o que deve permitir que o forte pipeline comercial se traduza em resultado positivo. O desafio será manter o patamar de receita acima de R$ 500 mil sem repetir o nível de despesas de maio.",
+      "error": null
+    }
+  },
+  "conclusao": "Maio de 2026 foi o mês de maior faturamento da Antidoto Design no semestre (R$ 567.636,91), porém encerrou com prejuízo líquido de -R$ 32.899,49 devido a uma combinação atípica de custos elevados com pessoal-chave (Diego R$ 115 mil, Gustavo R$ 111 mil, Dranger R$ 92 mil — quase o dobro do habitual) e investimentos em CAPEX (R$ 62 mil em máquinas + R$ 59 mil na Displax SA). O EBIT ficou em -R$ 21.999,70, com despesas totais de R$ 681.838,46 superando amplamente a receita. Do lado positivo, a carteira de clientes mostrou excelente diversificação (MAHLE, P&G, ESFERA, LEVAIN e ID4! entre R$ 50-78 mil cada) e o mix de Locação (90,9%) garante receita recorrente. A recomendação para junho é focar na normalização dos custos de pessoal, colher os frutos do CAPEX investido em forma de nova capacidade de locação, e manter o nível de receita acima de R$ 500 mil para reverter o resultado negativo."
+}

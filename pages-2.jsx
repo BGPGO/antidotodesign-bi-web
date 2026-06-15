@@ -33,8 +33,18 @@ const PageFluxo = ({ filters, setFilters, onOpenFilters, statusFilter, drilldown
       const cliente = row[4];
       const valor = row[5];
       const fornecedor = row[7];
+      const cc = row[8] || "";
       const mIdx = parseInt(mes.slice(5, 7), 10) - 1;
       if (mIdx < 0 || mIdx > 11) continue;
+      // Filtros DRE: receita só CC="Receitas", despesa exclui impostos
+      if (kind === "r" && cc !== "Receitas") continue;
+      if (kind === "d") {
+        if (categoria.indexOf("02.0 PIS sobre Faturamento") >= 0 ||
+            categoria.indexOf("02.0 COFINS sobre Faturamento") >= 0 ||
+            categoria.indexOf("02.0 ISS sobre Faturamento") >= 0 ||
+            categoria === "02.3 IRPJ sobre Lucro - TRIMESTRAL" ||
+            categoria === "02.3 CSLL sobre Lucro - TRIMESTRAL") continue;
+      }
       const section = kind === "r" ? result.receita : result.despesa;
       section.total[mIdx] += valor;
       if (!section.cats.has(categoria)) section.cats.set(categoria, { total: Array(12).fill(0), subs: new Map() });
@@ -228,10 +238,14 @@ const PageTesouraria = ({ filters, setFilters, onOpenFilters, statusFilter, dril
   const BReal = useMemo(() => window.getBit('realizado', null, year, month, filters && filters.regime, filters), [year, month, filters]);
   const BPend = useMemo(() => window.getBit('a_pagar_receber', null, year, month, filters && filters.regime, filters), [year, month, filters]);
   const isMobile = useIsMobile();
-  const recebido = BReal.TOTAL_RECEITA || 0;
-  const aReceber = BPend.TOTAL_RECEITA || 0;
-  const pago = BReal.TOTAL_DESPESA || 0;
-  const aPagar = BPend.TOTAL_DESPESA || 0;
+  const refYear = (B.META && B.META.ref_year) || new Date().getFullYear();
+  const dreReal = window.useDre('realizado', null, year || refYear, refYear, filters);
+  const drePend = window.useDre('a_pagar_receber', null, year || refYear, refYear, filters);
+  const dreDrill = window.useDre(statusFilter, drilldown, year || refYear, refYear, filters);
+  const recebido = dreReal.receitaOp || 0;
+  const aReceber = drePend.receitaOp || 0;
+  const pago = dreReal.despesasSemImpostos || 0;
+  const aPagar = drePend.despesasSemImpostos || 0;
 
   // Computar RECEITA_DIA e DESPESA_DIA do BFull (reagindo a year/month/regime)
   const recDiaSeg = BReal.RECEITA_DIA || BFull.RECEITA_DIA || Array(31).fill(0);
@@ -369,9 +383,9 @@ const PageTesouraria = ({ filters, setFilters, onOpenFilters, statusFilter, dril
       <DrilldownBadge drilldown={drilldown} onClear={() => setDrilldown(null)} />
 
       <div className="row row-4">
-        <KpiTile label={drilldown ? `Recebido · ${drilldown.label}` : "Recebido (PAGO)"} value={B.fmtK(drilldown ? B.TOTAL_RECEITA : recebido)} sparkValues={recDiaSeg} sparkColor="var(--green)" tone="green" nonMonetary />
+        <KpiTile label={drilldown ? `Recebido · ${drilldown.label}` : "Recebido (PAGO)"} value={B.fmtK(drilldown ? dreDrill.receitaOp : recebido)} sparkValues={recDiaSeg} sparkColor="var(--green)" tone="green" nonMonetary />
         <KpiTile label={drilldown ? `A receber · ${drilldown.label}` : "A receber"} value={B.fmtK(drilldown ? 0 : aReceber)} sparkValues={aReceberDiaSeg} sparkColor="var(--cyan)" tone="cyan" nonMonetary />
-        <KpiTile label={drilldown ? `Pago · ${drilldown.label}` : "Pago"} value={B.fmtK(drilldown ? B.TOTAL_DESPESA : pago)} sparkValues={pagoDiaSeg} sparkColor="var(--red)" tone="red" nonMonetary />
+        <KpiTile label={drilldown ? `Pago · ${drilldown.label}` : "Pago"} value={B.fmtK(drilldown ? dreDrill.despesasSemImpostos : pago)} sparkValues={pagoDiaSeg} sparkColor="var(--red)" tone="red" nonMonetary />
         <KpiTile label={drilldown ? `A pagar · ${drilldown.label}` : "A pagar"} value={B.fmtK(drilldown ? 0 : aPagar)} sparkValues={aPagarDiaSeg} sparkColor="var(--amber)" tone="amber" nonMonetary />
       </div>
 
@@ -695,8 +709,17 @@ const PageComparativo = ({ filters, setFilters, statusFilter, drilldown, setDril
     const recCat = new Map(), despCat = new Map();
     const recSubs = new Map(), despSubs = new Map(); // cat -> Map(subName -> valor)
     for (const row of txFiltered) {
-      const [kind, mes, , categoria, cliente, valor, , fornecedor] = row;
+      const [kind, mes, , categoria, cliente, valor, , fornecedor, cc] = row;
       if (!mes || mes < mIniStr || mes > mFimStr) continue;
+      // Filtros DRE: receita só CC="Receitas", despesa exclui impostos
+      if (kind === "r" && (cc || "") !== "Receitas") continue;
+      if (kind === "d") {
+        if (categoria.indexOf("02.0 PIS sobre Faturamento") >= 0 ||
+            categoria.indexOf("02.0 COFINS sobre Faturamento") >= 0 ||
+            categoria.indexOf("02.0 ISS sobre Faturamento") >= 0 ||
+            categoria === "02.3 IRPJ sobre Lucro - TRIMESTRAL" ||
+            categoria === "02.3 CSLL sobre Lucro - TRIMESTRAL") continue;
+      }
       if (kind === "r") {
         totalRec += valor;
         recCat.set(categoria, (recCat.get(categoria) || 0) + valor);
@@ -970,6 +993,11 @@ const PageRelatorio = ({ year, statusFilter }) => {
   const [generating, setGenerating] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
 
+  // DRE hooks — DEVEM ficar antes de qualquer early return (regra dos hooks)
+  const _refYearRel = periodYear || new Date().getFullYear();
+  const dreRel = window.useDre('realizado', null, _refYearRel, _refYearRel, null);
+  const drePrevRel = window.useDre('a_pagar_receber', null, _refYearRel, _refYearRel, null);
+
   // Cards reativos ao período (year + month) — antes usavam window.BIT global YTD
   // Mantidos no topo (regra dos hooks) — não chamar dentro de early returns
   const B = useMemo(
@@ -997,57 +1025,26 @@ const PageRelatorio = ({ year, statusFilter }) => {
     try { localStorage.setItem('bi.report.period', JSON.stringify({ year: periodYear, month: periodMonth })); } catch (e) {}
     const file = reportFileName(periodYear, periodMonth);
 
-    // 1) tenta o JSON pre-gerado (estatico). Se 404, cai no fallback de geracao on-demand.
-    fetch(file, { cache: 'no-store' })
-      .then(r => {
-        if (r.ok) return r.json();
-        if (r.status === 404) return null; // sinaliza fallback
-        throw new Error(`HTTP ${r.status} (arquivo ${file})`);
-      })
-      .then(data => {
-        if (cancelled) return;
-        if (data) {
-          // tinha relatorio pre-gerado
-          setReport(data);
-          setLoading(false);
-          return null;
-        }
-        // 2) Fallback: chama a API publica de geracao on-demand
-        const apiUrl = window.BI_REPORT_API;
-        if (!apiUrl) {
-          throw new Error('API de geracao nao configurada');
-        }
-        setLoading(false);
-        setGenerating(true);
-        return fetch(`${apiUrl}/generate-report`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            year: periodYear,
-            month: periodMonth > 0 ? periodMonth : null,
-          }),
-        }).then(async (resp) => {
+    // 1) tenta relatórios embutidos (window.BI_REPORTS)
+    if (window.BI_REPORTS && window.BI_REPORTS[file]) {
+      setReport(window.BI_REPORTS[file]);
+      setLoading(false);
+    } else {
+      // 2) tenta fetch HTTP (funciona com servidor, não com file://)
+      fetch(file, { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null)
+        .then(data => {
           if (cancelled) return;
-          if (resp.status === 429) {
-            const retry = resp.headers.get('Retry-After') || '3600';
-            throw new Error(`Limite de geracao atingido. Tente novamente em ~${Math.ceil(Number(retry) / 60)} minutos.`);
+          if (data) {
+            setReport(data);
+            setLoading(false);
+          } else {
+            setError('Relatório não encontrado para este período.');
+            setLoading(false);
           }
-          if (!resp.ok) {
-            const t = await resp.text().catch(() => '');
-            throw new Error(`Falha ao gerar (HTTP ${resp.status}). Verifique conexao com Anthropic. ${t.slice(0,200)}`);
-          }
-          const generated = await resp.json();
-          if (cancelled) return;
-          setReport(generated);
-          setGenerating(false);
         });
-      })
-      .catch(e => {
-        if (cancelled) return;
-        setError(e.message);
-        setLoading(false);
-        setGenerating(false);
-      });
+    }
     return () => { cancelled = true; };
   }, [periodYear, periodMonth]);
 
@@ -1151,13 +1148,12 @@ const PageRelatorio = ({ year, statusFilter }) => {
     return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
-  const k = B.KPIS || B;
-  const recebido = k.TOTAL_RECEITA || 0;
-  const pago = k.TOTAL_DESPESA || 0;
-  const liquido = k.VALOR_LIQUIDO != null ? k.VALOR_LIQUIDO : (recebido - pago);
-  const margem = k.MARGEM_LIQUIDA != null ? k.MARGEM_LIQUIDA : (recebido > 0 ? (liquido / recebido) * 100 : 0);
-  const aReceber = (Bprev.KPIS && Bprev.KPIS.TOTAL_RECEITA) || 0;
-  const aPagar = (Bprev.KPIS && Bprev.KPIS.TOTAL_DESPESA) || 0;
+  const recebido = dreRel.receitaOp || 0;
+  const pago = dreRel.despesasSemImpostos || 0;
+  const liquido = dreRel.lucroLiquido || 0;
+  const margem = recebido > 0 ? (liquido / recebido) * 100 : 0;
+  const aReceber = drePrevRel.receitaOp || 0;
+  const aPagar = drePrevRel.despesasSemImpostos || 0;
 
   const sec = (id) => (report.secoes && report.secoes[id]) || { title: id, analysis: '' };
 
@@ -1268,7 +1264,7 @@ node generate-report.cjs --force
           <h3 className="report-sub">Líquido mês a mês</h3>
           <ul className="report-list">
             {(B.MONTH_DATA || []).map((m, i) => {
-              const v = m.receita - m.despesa;
+              const v = (dreRel.receitaOpMonth[i] || 0) - (dreRel.despSemImpMonth[i] || 0);
               return <li key={i}><span style={{ textTransform: "capitalize" }}>{m.m}</span><b style={{ color: v >= 0 ? "var(--green)" : "var(--red)" }}>{B.fmt(v)}</b></li>;
             })}
           </ul>
