@@ -2928,7 +2928,7 @@ table.t tr.total td {
   border-radius: 8px;
   flex-wrap: wrap;
   position: relative;
-  z-index: 100;
+  z-index: 40;
 }
 .ifb-item {
   display: flex;

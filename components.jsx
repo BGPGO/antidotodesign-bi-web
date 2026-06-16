@@ -89,7 +89,7 @@ const Sidebar = ({ active, onSelect, open }) => {
   return (
     <aside className={`sidebar ${open ? "open" : ""}`}>
       <div className="sb-brand">
-        <img src="assets/bgp-logo-white.png" alt="Clair Clinic" className="sb-logo-img" style={{ height: 64, width: "auto", borderRadius: 6 }} />
+        <img src="assets/logo-antidotodesign.png" alt="Antidoto Design" className="sb-logo-img" style={{ height: 64, width: "auto", borderRadius: 6 }} />
       </div>
       <div className="sb-section">Geral</div>
       {general.map(renderItem)}
@@ -292,7 +292,6 @@ const Header = ({ page, onToggleSidebar, statusFilter, setStatusFilter, year, se
     <header className="header">
       <button className="hd-icon-btn hd-menu-btn" title="Menu" onClick={onToggleSidebar}><Icon name="menu" /></button>
       <div className="breadcrumb">
-        <img src="assets/bgp-logo-white.png" alt="Clair Clinic" style={{ height: 36, width: "auto", borderRadius: 4, marginRight: 6 }} />
         <Icon name="chevronRight" />
         <span>BI Financeiro</span>
         <Icon name="chevronRight" />
@@ -304,9 +303,6 @@ const Header = ({ page, onToggleSidebar, statusFilter, setStatusFilter, year, se
         <input type="date" className="header-year" value={(filters && filters.dateFrom) || ""} onChange={e => updateFilter({ dateFrom: e.target.value })} style={{ width: 130, fontSize: 12 }} />
         <label style={{ fontSize: 10, color: "var(--mute)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Até</label>
         <input type="date" className="header-year" value={(filters && filters.dateTo) || ""} onChange={e => updateFilter({ dateTo: e.target.value })} style={{ width: 130, fontSize: 12 }} />
-        <select className="header-year" value={(filters && filters.categoria) || "Todas categorias"} onChange={e => updateFilter({ categoria: e.target.value })} title="Filtrar por categoria" style={{ maxWidth: 200, fontSize: 12 }}>
-          {allCats.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
       </div>
       {setStatusFilter && <StatusFilterSeg value={statusFilter} onChange={setStatusFilter} />}
       <BiExportButton statusFilter={statusFilter} year={year} month={month} filters={filters} />
