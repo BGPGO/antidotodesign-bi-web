@@ -19,11 +19,14 @@
 
   <script>
     // Le filtro persistido ANTES do data.js, pq data.js usa window.BIT_FILTER pra montar BIT inicial.
-    // statusFilter pode ser string (legado) ou JSON array (multiseleção).
+    // BIT_FILTER DEVE ser string simples pra _makeBit do data.js funcionar.
+    // O app.bundle.js (carrega depois) lida com array internamente.
     try {
       var _saved = localStorage.getItem('bi.statusFilter');
-      if (_saved) { try { var _p = JSON.parse(_saved); window.BIT_FILTER = Array.isArray(_p) ? _p : _saved; } catch(e2) { window.BIT_FILTER = _saved; } }
-      else { window.BIT_FILTER = 'realizado'; }
+      if (_saved) {
+        try { var _p = JSON.parse(_saved); window.BIT_FILTER = Array.isArray(_p) ? (_p.length === 1 ? _p[0] : 'tudo') : _saved; }
+        catch(e2) { window.BIT_FILTER = _saved; }
+      } else { window.BIT_FILTER = 'realizado'; }
     } catch (e) { window.BIT_FILTER = 'realizado'; }
     // URL da API de geracao on-demand de relatorio IA. Usado pelo PageRelatorio
     // como fallback quando o report-{year}-{month}.json estatico nao existe.
