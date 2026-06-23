@@ -254,6 +254,11 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
   const handleBarMes = (d, i) => {
     const mm = String(i + 1).padStart(2, "0");
     const ym = `${refYear}-${mm}`;
+    // Toggle: clicar de novo na mesma barra limpa o drilldown
+    if (drilldown && drilldown.type === "mes" && drilldown.value === ym) {
+      setDrilldown(null);
+      return;
+    }
     const lbl = `${d.m.charAt(0).toUpperCase() + d.m.slice(1, 3)}/${refYear}`;
     setDrilldown({ type: "mes", value: ym, label: lbl });
   };
@@ -281,16 +286,37 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
     { value: dre.lucroLiquido,        label: "Lucro líquido",        kind: dre.lucroLiquido >= 0 ? "receita" : "despesa" },
   ];
 
-  // Dados do gráfico alinhados com KPIs DRE
+  // Dados do gráfico SEMPRE usam dreFull (sem drilldown) — barras não somem ao clicar
+  const dreFull2 = useDre(statusFilter, null, year, refYear, filters);
   const chartData = BFull.MONTH_DATA.map((m, i) => ({
     ...m,
-    receita: dre.receitaOpMonth[i] || 0,
-    despesa: dre.despSemImpMonth[i] || 0,
-    custos: dre.custosMonth[i] || 0,
+    receita: dreFull2.receitaOpMonth[i] || 0,
+    despesa: dreFull2.despSemImpMonth[i] || 0,
+    custos: dreFull2.custosMonth[i] || 0,
   }));
 
-  const statusLabel = statusFilter === "realizado" ? "realizado (PAGO)" :
-                      statusFilter === "a_pagar_receber" ? "pendente (A vencer/receber)" : "tudo (pago + pendente)";
+  // Extrato detalhado do mês clicado (para tabela de drill-down)
+  const extratoMesFiltrado = useMemo(() => {
+    if (!drilldown || drilldown.type !== "mes") return [];
+    const rg = (filters && filters.regime === "competencia") ? "k" : "c";
+    const sf = statusFilter || "realizado";
+    const txs = window.filterTx ? window.filterTx(window.ALL_TX || [], sf, drilldown, rg === "k" ? "competencia" : "caixa", filters) : [];
+    return txs
+      .filter(r => r[1] && r[1].startsWith(String(year || refYear)))
+      .map(r => ({
+        data: `${String(r[2]).padStart(2, "0")}/${r[1].slice(5, 7)}/${r[1].slice(0, 4)}`,
+        tipo: r[0] === "r" ? "Receita" : r[3] && r[3].indexOf("03.0") >= 0 ? "Custo" : "Despesa",
+        categoria: r[3] || "",
+        pessoa: r[0] === "r" ? (r[4] || "") : (r[7] || ""),
+        valor: r[0] === "r" ? r[5] : -r[5],
+      }))
+      .sort((a, b) => b.valor - a.valor);
+  }, [drilldown, statusFilter, year, refYear, filters]);
+
+  const sfLabel = Array.isArray(statusFilter) ? statusFilter.join("+") : statusFilter;
+  const statusLabel = sfLabel === "realizado" ? "realizado (PAGO)" :
+                      sfLabel === "a_pagar_receber" ? "pendente (A vencer/receber)" :
+                      sfLabel === "tudo" ? "tudo (pago + pendente)" : sfLabel;
 
   return (
     <div className="page">
@@ -300,6 +326,7 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
           <div className="status-line">Cliente · ano {refYear} · status <b>{statusLabel}</b></div>
         </div>
         <div className="actions">
+          <PageExportButton pageId="overview" />
           <RegimeToggle filters={filters} setFilters={setFilters} />
         </div>
       </div>
@@ -359,6 +386,38 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
             <OverviewBars data={chartData} height={220} year={String(refYear)} onBarClick={handleBarMes} activeIdx={activeMonthIdx} />
           </div>
 
+          {/* Tabela detalhada do mês clicado */}
+          {drilldown && drilldown.type === "mes" && extratoMesFiltrado.length > 0 && (
+            <div className="card">
+              <div className="card-title-row">
+                <h2 className="card-title">Detalhamento · {drilldown.label}</h2>
+                <span style={{ fontSize: 11, color: "var(--mute)" }}>{extratoMesFiltrado.length} lançamentos</span>
+              </div>
+              <div className="t-scroll" style={{ maxHeight: 400 }}>
+                <table className="t">
+                  <thead>
+                    <tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Cliente / Fornecedor</th><th className="num">Valor</th></tr>
+                  </thead>
+                  <tbody>
+                    {extratoMesFiltrado.slice(0, 50).map((e, i) => (
+                      <tr key={i}>
+                        <td style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>{e.data}</td>
+                        <td><span className={`chip ${e.tipo === "Receita" ? "green" : e.tipo === "Custo" ? "amber" : "red"}`} style={{ fontSize: 10 }}>{e.tipo}</span></td>
+                        <td style={{ fontSize: 11 }}>{e.categoria}</td>
+                        <td style={{ fontSize: 11 }}>{e.pessoa}</td>
+                        <td className={`num ${e.valor >= 0 ? "green" : "red"}`}>{B.fmt(Math.abs(e.valor))}</td>
+                      </tr>
+                    ))}
+                    <tr className="total">
+                      <td colSpan="4">Total</td>
+                      <td className="num">{B.fmt(extratoMesFiltrado.reduce((s, e) => s + e.valor, 0))}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <div className="card">
             <div className="card-title-row" style={{ marginBottom: 12 }}>
               <h2 className="card-title">Visualização indicadores</h2>
@@ -399,6 +458,7 @@ const PageIndicators = ({ filters, statusFilter, drilldown, setDrilldown, year, 
   const handleBarMes = (d, i) => {
     const mm = String(i + 1).padStart(2, "0");
     const ym = `${refYear}-${mm}`;
+    if (drilldown && drilldown.type === "mes" && drilldown.value === ym) { setDrilldown(null); return; }
     const lbl = `${(d.m || "").charAt(0).toUpperCase() + (d.m || "").slice(1, 3)}/${refYear}`;
     setDrilldown({ type: "mes", value: ym, label: lbl });
   };
@@ -486,15 +546,16 @@ const PageReceita = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
   }, [filters, statusFilter, drilldown, year, refYear]);
   const ticket = numClientes > 0 ? totalReceita / numClientes : 0;
 
-  // Drilldown handlers
+  // Drilldown handlers (toggle: clicar de novo limpa)
   const handleBarMes = (v, i) => {
     const mm = String(i + 1).padStart(2, "0");
     const ym = `${refYear}-${mm}`;
+    if (drilldown && drilldown.type === "mes" && drilldown.value === ym) { setDrilldown(null); return; }
     const mn = B.MONTHS_FULL[i] || "";
     setDrilldown({ type: "mes", value: ym, label: `${mn.charAt(0).toUpperCase() + mn.slice(1, 3)}/${refYear}` });
   };
-  const handleCategoria = (it) => setDrilldown({ type: "categoria", value: it.name, label: it.name });
-  const handleCliente = (it) => setDrilldown({ type: "cliente", value: it.name, label: it.name });
+  const handleCategoria = (it) => { if (drilldown && drilldown.type === "categoria" && drilldown.value === it.name) { setDrilldown(null); return; } setDrilldown({ type: "categoria", value: it.name, label: it.name }); };
+  const handleCliente = (it) => { if (drilldown && drilldown.type === "cliente" && drilldown.value === it.name) { setDrilldown(null); return; } setDrilldown({ type: "cliente", value: it.name, label: it.name }); };
 
   // Indices ativos para destaque
   const activeMonthIdx = (drilldown && drilldown.type === "mes")
@@ -518,6 +579,7 @@ const PageReceita = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
           <div className="status-line">Composição por categoria, cliente e mês</div>
         </div>
         <div className="actions">
+          <PageExportButton pageId="receita" />
           <RegimeToggle filters={filters} setFilters={setFilters} />
         </div>
       </div>
@@ -606,11 +668,12 @@ const PageDespesa = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
   const handleBarMes = (v, i) => {
     const mm = String(i + 1).padStart(2, "0");
     const ym = `${refYear}-${mm}`;
+    if (drilldown && drilldown.type === "mes" && drilldown.value === ym) { setDrilldown(null); return; }
     const mn = B.MONTHS_FULL[i] || "";
     setDrilldown({ type: "mes", value: ym, label: `${mn.charAt(0).toUpperCase() + mn.slice(1, 3)}/${refYear}` });
   };
-  const handleCategoria = (it) => setDrilldown({ type: "categoria", value: it.name, label: it.name });
-  const handleFornecedor = (it) => setDrilldown({ type: "fornecedor", value: it.name, label: it.name });
+  const handleCategoria = (it) => { if (drilldown && drilldown.type === "categoria" && drilldown.value === it.name) { setDrilldown(null); return; } setDrilldown({ type: "categoria", value: it.name, label: it.name }); };
+  const handleFornecedor = (it) => { if (drilldown && drilldown.type === "fornecedor" && drilldown.value === it.name) { setDrilldown(null); return; } setDrilldown({ type: "fornecedor", value: it.name, label: it.name }); };
 
   const activeMonthIdx = (drilldown && drilldown.type === "mes")
     ? parseInt(drilldown.value.slice(5, 7), 10) - 1 : -1;
@@ -632,6 +695,7 @@ const PageDespesa = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
           <div className="status-line">Composição por categoria, fornecedor e mês</div>
         </div>
         <div className="actions">
+          <PageExportButton pageId="despesa" />
           <RegimeToggle filters={filters} setFilters={setFilters} />
         </div>
       </div>
@@ -697,4 +761,138 @@ const PageDespesa = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
   );
 };
 
-Object.assign(window, { PageOverview, PageIndicators, PageReceita, PageDespesa, RangePills, computeDre, useDre });
+// ===== PageCustos =====
+const PageCustos = ({ filters, setFilters, onOpenFilters, statusFilter, drilldown, setDrilldown, year, month }) => {
+  const B = useMemo(() => window.getBit(statusFilter, drilldown, year, month, filters && filters.regime, filters), [statusFilter, drilldown, year, month, filters]);
+  const BFull = useMemo(() => window.getBit(statusFilter, null, year, month, filters && filters.regime, filters), [statusFilter, year, month, filters]);
+  const refYear = (B.META && B.META.ref_year) || new Date().getFullYear();
+  const dre = useDre(statusFilter, drilldown, year, refYear, filters);
+  const dreFull = useDre(statusFilter, null, year, refYear, filters);
+  const totalCustos = dre.custos;
+  const mesesComDados = dreFull.custosMonth.filter(v => v > 0).length || 1;
+  const mediaMes = totalCustos / mesesComDados;
+
+  // Custos por categoria e fornecedor (filtrando só categorias 03.0)
+  const { custosCategorias, custosFornecedores, extratoCustos } = useMemo(() => {
+    var rg = (filters && filters.regime === "competencia") ? "k" : "c";
+    var sf = statusFilter || "realizado";
+    var txs = window.filterTx ? window.filterTx(window.ALL_TX || [], sf, drilldown, rg === "k" ? "competencia" : "caixa", filters) : [];
+    txs = txs.filter(r => r[1] && r[1].startsWith(String(year || refYear)));
+    // Só custos (categoria começa com 03.0)
+    var custosTxs = txs.filter(r => r[0] === "d" && r[3] && r[3].indexOf("03.0") >= 0);
+    var catMap = {};
+    var fornMap = {};
+    var extrato = [];
+    for (var i = 0; i < custosTxs.length; i++) {
+      var r = custosTxs[i];
+      var cat = r[3] || "Sem categoria";
+      var forn = r[7] || "Sem fornecedor";
+      catMap[cat] = (catMap[cat] || 0) + r[5];
+      fornMap[forn] = (fornMap[forn] || 0) + r[5];
+      var dataStr = String(r[2]).padStart(2, "0") + "/" + r[1].slice(5, 7) + "/" + r[1].slice(0, 4);
+      extrato.push([dataStr, r[8] || "", cat, forn, -r[5], ""]);
+    }
+    var cats = Object.entries(catMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+    var forns = Object.entries(fornMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+    extrato.sort((a, b) => Math.abs(b[4]) - Math.abs(a[4]));
+    return { custosCategorias: cats, custosFornecedores: forns, extratoCustos: extrato };
+  }, [filters, statusFilter, drilldown, year, refYear]);
+
+  const numFornec = custosFornecedores.length;
+  const mediaForn = numFornec > 0 ? totalCustos / numFornec : 0;
+
+  const handleBarMes = (v, i) => {
+    const mm = String(i + 1).padStart(2, "0");
+    const ym = `${refYear}-${mm}`;
+    if (drilldown && drilldown.type === "mes" && drilldown.value === ym) { setDrilldown(null); return; }
+    const mn = B.MONTHS_FULL[i] || "";
+    setDrilldown({ type: "mes", value: ym, label: `${mn.charAt(0).toUpperCase() + mn.slice(1, 3)}/${refYear}` });
+  };
+  const handleCategoria = (it) => { if (drilldown && drilldown.type === "categoria" && drilldown.value === it.name) { setDrilldown(null); return; } setDrilldown({ type: "categoria", value: it.name, label: it.name }); };
+  const handleFornecedor = (it) => { if (drilldown && drilldown.type === "fornecedor" && drilldown.value === it.name) { setDrilldown(null); return; } setDrilldown({ type: "fornecedor", value: it.name, label: it.name }); };
+
+  const activeMonthIdx = (drilldown && drilldown.type === "mes")
+    ? parseInt(drilldown.value.slice(5, 7), 10) - 1 : -1;
+  const activeCategoria = (drilldown && drilldown.type === "categoria") ? drilldown.value : null;
+  const activeFornecedor = (drilldown && drilldown.type === "fornecedor") ? drilldown.value : null;
+
+  const extratoFiltrado = window.applyDrilldown(extratoCustos, drilldown);
+  const totalFiltrado = drilldown
+    ? Math.abs(extratoFiltrado.reduce((s, e) => s + e[4], 0))
+    : totalCustos;
+
+  return (
+    <div className="page">
+      <div className="page-title">
+        <div>
+          <h1>Custos</h1>
+          <div className="status-line">Composição por categoria, fornecedor e mês</div>
+        </div>
+        <div className="actions">
+          <PageExportButton pageId="custos" />
+          <RegimeToggle filters={filters} setFilters={setFilters} />
+        </div>
+      </div>
+
+      <DrilldownBadge drilldown={drilldown} onClear={() => setDrilldown(null)} />
+      <InlineFilterBar drilldown={drilldown} setDrilldown={setDrilldown} filters={filters} setFilters={setFilters} />
+
+      <div className="row row-4">
+        <KpiTile label="Custos totais" value={B.fmtK(totalCustos)} sparkValues={dreFull.custosMonth} sparkColor="var(--amber)" tone="amber" nonMonetary />
+        <KpiTile label="Média por mês" value={B.fmtK(mediaMes)} sparkValues={dreFull.custosMonth} sparkColor="var(--amber)" tone="amber" nonMonetary />
+        <KpiTile label="Fornecedores" value={String(numFornec)} sparkValues={dreFull.custosMonth.map(v => v > 0 ? 1 : 0)} sparkColor="var(--cyan)" tone="cyan" nonMonetary />
+        <KpiTile label="Média por fornecedor" value={B.fmtK(mediaForn)} sparkValues={dreFull.custosMonth.map(v => v / 30)} sparkColor="var(--amber)" tone="amber" nonMonetary />
+      </div>
+
+      <div className="card">
+        <h2 className="card-title">Custos por mês</h2>
+        <SingleBars values={dreFull.custosMonth} labels={BFull.MONTHS_FULL} color="amber" height={240}
+          onBarClick={handleBarMes} activeIdx={activeMonthIdx} />
+      </div>
+
+      <div className="row" style={{ gridTemplateColumns: "minmax(0, 4fr) minmax(0, 5fr) minmax(0, 4fr)" }}>
+        <div className="card">
+          <h2 className="card-title">Custos por categoria</h2>
+          <BarList items={custosCategorias} color="amber" onItemClick={handleCategoria} activeName={activeCategoria} />
+        </div>
+
+        <div className="card">
+          <div className="card-title-row">
+            <h2 className="card-title">Extrato de custos {drilldown ? `· ${drilldown.label}` : ""}</h2>
+          </div>
+          <div className="t-scroll">
+            <table className="t">
+              <thead>
+                <tr><th>Data</th><th>Categoria</th><th>Fornecedor</th><th className="num">Custo</th></tr>
+              </thead>
+              <tbody>
+                {extratoFiltrado.slice(0, 30).map((e, i) => (
+                  <tr key={i}>
+                    <td style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>{e[0]}</td>
+                    <td>{e[2]}</td>
+                    <td>{e[3]}</td>
+                    <td className="num" style={{ color: "var(--amber)" }}>{B.fmt(Math.abs(e[4]))}</td>
+                  </tr>
+                ))}
+                {extratoFiltrado.length === 0 && (
+                  <tr><td colSpan="4" style={{ color: "var(--mute)", textAlign: "center", padding: 18 }}>Sem custos no filtro selecionado</td></tr>
+                )}
+                <tr className="total">
+                  <td colSpan="3">Total{drilldown ? " (filtrado)" : ""}</td>
+                  <td className="num" style={{ color: "var(--amber)" }}>{B.fmt(totalFiltrado)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="card">
+          <h2 className="card-title">Custos por fornecedor</h2>
+          <BarList items={custosFornecedores} color="amber" onItemClick={handleFornecedor} activeName={activeFornecedor} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+Object.assign(window, { PageOverview, PageIndicators, PageReceita, PageDespesa, PageCustos, RangePills, computeDre, useDre });
