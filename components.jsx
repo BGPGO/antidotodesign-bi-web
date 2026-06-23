@@ -42,6 +42,7 @@ const Sidebar = ({ active, onSelect, open }) => {
     { id: "overview", icon: "home", label: "Visão Geral" },
     { id: "receita", icon: "money", label: "Receita" },
     { id: "despesa", icon: "expense", label: "Despesa" },
+    { id: "custos", icon: "chart", label: "Custos" },
     { id: "fluxo", icon: "flow", label: "Fluxo de Caixa" },
     { id: "tesouraria", icon: "treasury", label: "Tesouraria" },
     { id: "comparativo", icon: "compare", label: "Comparativo" },
@@ -112,6 +113,7 @@ const PAGE_TITLES = {
   indicators: "Indicadores",
   receita: "Receita",
   despesa: "Despesa",
+  custos: "Custos",
   fluxo: "Fluxo de Caixa",
   tesouraria: "Tesouraria",
   comparativo: "Comparativo",
@@ -144,16 +146,32 @@ const DateRangeSeg = ({ value, onChange }) => (
 const STATUS_FILTERS = [
   { id: "realizado", label: "Realizado" },
   { id: "a_pagar_receber", label: "A pagar/receber" },
+  { id: "atrasado", label: "Atrasado" },
   { id: "tudo", label: "Tudo" },
 ];
 
-const StatusFilterSeg = ({ value, onChange }) => (
-  <div className="seg status-filter-seg" title="Filtro de status do lançamento">
-    {STATUS_FILTERS.map(s => (
-      <button key={s.id} className={value === s.id ? "active" : ""} onClick={() => onChange(s.id)}>{s.label}</button>
-    ))}
-  </div>
-);
+const StatusFilterSeg = ({ value, onChange }) => {
+  // value pode ser string (compat legado) ou array (multiseleção)
+  const selected = Array.isArray(value) ? value : [value];
+  const toggle = (id) => {
+    if (id === "tudo") return onChange(["tudo"]);
+    let next;
+    if (selected.includes(id)) {
+      next = selected.filter(s => s !== id);
+    } else {
+      next = [...selected.filter(s => s !== "tudo"), id];
+    }
+    if (next.length === 0) next = ["tudo"];
+    onChange(next);
+  };
+  return (
+    <div className="seg status-filter-seg" title="Filtro de status — clique múltiplo para combinar">
+      {STATUS_FILTERS.map(s => (
+        <button key={s.id} className={selected.includes(s.id) ? "active" : ""} onClick={() => toggle(s.id)}>{s.label}</button>
+      ))}
+    </div>
+  );
+};
 
 const YearSelect = ({ value, onChange, available }) => {
   const years = available && available.length ? available : [value];
@@ -188,11 +206,64 @@ const MonthSelect = ({ value, onChange }) => (
   </select>
 );
 
+// Multiseleção de meses — dropdown com checkboxes (estilo igual ao YearSelect)
+const MonthMultiSelect = ({ selected, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const MESES = [
+    { v: 1, label: "Janeiro" }, { v: 2, label: "Fevereiro" }, { v: 3, label: "Março" },
+    { v: 4, label: "Abril" }, { v: 5, label: "Maio" }, { v: 6, label: "Junho" },
+    { v: 7, label: "Julho" }, { v: 8, label: "Agosto" }, { v: 9, label: "Setembro" },
+    { v: 10, label: "Outubro" }, { v: 11, label: "Novembro" }, { v: 12, label: "Dezembro" },
+  ];
+  const sel = selected || [];
+  const toggle = (m) => {
+    if (sel.includes(m)) {
+      onChange(sel.filter(v => v !== m));
+    } else {
+      onChange([...sel, m].sort((a, b) => a - b));
+    }
+  };
+  const label = sel.length === 0 ? "Todos os meses"
+    : sel.length <= 3 ? sel.map(v => MESES[v - 1].label.slice(0, 3)).join(", ")
+    : `${sel.length} meses`;
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (!e.target.closest('.mms-wrap')) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div className="mms-wrap" style={{ position: "relative" }}>
+      <button
+        className="header-year"
+        onClick={() => setOpen(o => !o)}
+        title="Filtrar por meses"
+        style={{ cursor: "pointer", minWidth: 130, textAlign: "left" }}
+      >{label}</button>
+      {open && (
+        <div className="mms-dropdown">
+          <div className="mms-item" onClick={() => { onChange([]); }} style={{ fontWeight: 600, color: sel.length === 0 ? "var(--cyan)" : "var(--fg-2)" }}>
+            <span style={{ display: "inline-block", width: 18, textAlign: "center" }}>{sel.length === 0 ? "✓" : ""}</span> Todos os meses
+          </div>
+          {MESES.map(m => (
+            <div key={m.v} className={`mms-item ${sel.includes(m.v) ? "active" : ""}`} onClick={() => toggle(m.v)}>
+              <span style={{ display: "inline-block", width: 18, textAlign: "center" }}>{sel.includes(m.v) ? "✓" : ""}</span> {m.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // BiExportButton: modal com checkboxes pra exportar telas selecionadas como PDF
 const BI_EXPORT_PAGES = [
   { id: "overview", label: "01 Visão Geral" },
   { id: "receita", label: "02 Receita" },
   { id: "despesa", label: "03 Despesa" },
+  { id: "custos", label: "03b Custos" },
   { id: "fluxo", label: "04 Fluxo de Caixa" },
   { id: "tesouraria", label: "05 Tesouraria" },
   { id: "comparativo", label: "06 Comparativo" },
@@ -230,6 +301,14 @@ const BiExportButton = ({ statusFilter, year, month, filters }) => {
     if (window.startBiExport) window.startBiExport(ordered);
     setOpen(false);
   };
+  const submitExcel = () => {
+    if (selected.size === 0) return;
+    const ordered = visiblePages.filter(p => selected.has(p.id)).map(p => p.id);
+    if (window.startBiExcelExport) {
+      window.startBiExcelExport(ordered, statusFilter, null, year, month, (filters && filters.regime) || "caixa", filters);
+    }
+    setOpen(false);
+  };
   return (
     <>
       <button className="btn-ghost hd-export-bi" onClick={() => setOpen(true)} title="Exportar BI">
@@ -261,6 +340,9 @@ const BiExportButton = ({ statusFilter, year, month, filters }) => {
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button className="btn-ghost" onClick={() => setOpen(false)}>Cancelar</button>
+                <button className="btn-ghost" onClick={submitExcel} disabled={selected.size === 0} style={{ color: "var(--green)" }}>
+                  Excel ({selected.size})
+                </button>
                 <button className="btn-primary" onClick={submitPdf} disabled={selected.size === 0}>
                   PDF ({selected.size})
                 </button>
@@ -273,20 +355,8 @@ const BiExportButton = ({ statusFilter, year, month, filters }) => {
   );
 };
 
-// Header: breadcrumb + date slicers + category filter + StatusFilter
-const Header = ({ page, onToggleSidebar, statusFilter, setStatusFilter, year, setYear, month, setMonth, filters, setFilters }) => {
-  const allCats = useMemo(() => {
-    const tx = window.ALL_TX || [];
-    const rg = (filters && filters.regime === "competencia") ? "k" : "c";
-    const cats = new Set();
-    for (var i = 0; i < tx.length; i++) { if (tx[i][9] === rg && tx[i][3]) cats.add(tx[i][3]); }
-    return ["Todas categorias", ...Array.from(cats).sort()];
-  }, [filters && filters.regime]);
-  const dias = useMemo(() => {
-    var d = [{ v: 0, l: "Todos" }];
-    for (var i = 1; i <= 31; i++) d.push({ v: i, l: "" + i });
-    return d;
-  }, []);
+// Header: breadcrumb + year select + month multi-select + StatusFilter
+const Header = ({ page, onToggleSidebar, statusFilter, setStatusFilter, year, setYear, month, setMonth, filters, setFilters, selectedMonths, setSelectedMonths }) => {
   const updateFilter = (patch) => setFilters && setFilters(Object.assign({}, filters, patch));
   return (
     <header className="header">
@@ -298,11 +368,9 @@ const Header = ({ page, onToggleSidebar, statusFilter, setStatusFilter, year, se
         <b>{PAGE_TITLES[page] || "Visão Geral"}</b>
       </div>
       <div style={{ flex: 1 }} />
-      <div className="hd-filters" style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", overflow: "visible" }}>
-        <label style={{ fontSize: 10, color: "var(--mute)", textTransform: "uppercase", letterSpacing: "0.05em" }}>De</label>
-        <input type="date" className="header-year" value={(filters && filters.dateFrom) || ""} onChange={e => updateFilter({ dateFrom: e.target.value })} style={{ width: 130, fontSize: 12 }} />
-        <label style={{ fontSize: 10, color: "var(--mute)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Até</label>
-        <input type="date" className="header-year" value={(filters && filters.dateTo) || ""} onChange={e => updateFilter({ dateTo: e.target.value })} style={{ width: 130, fontSize: 12 }} />
+      <div className="hd-filters" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", overflow: "visible" }}>
+        {setYear && <YearSelect value={year} onChange={setYear} available={window.AVAILABLE_YEARS || [year]} />}
+        {setSelectedMonths && <MonthMultiSelect selected={selectedMonths} onChange={setSelectedMonths} />}
       </div>
       {setStatusFilter && <StatusFilterSeg value={statusFilter} onChange={setStatusFilter} />}
       <BiExportButton statusFilter={statusFilter} year={year} month={month} filters={filters} />
@@ -371,7 +439,7 @@ const SingleBars = ({ values, labels, color = "green", height = 200, onBarClick,
             style={onBarClick ? { cursor: "pointer" } : undefined}
           >
             <div className="stack">
-              <div className={`bar ${color === "red" ? "red" : ""}`} style={{ height: `${h}%`, width: 22, background: color === "cyan" ? "var(--cyan)" : (color === "red" ? "var(--red)" : "var(--green)") }} title={window.BIT.fmt(v)}>
+              <div className={`bar ${color === "red" ? "red" : ""}`} style={{ height: `${h}%`, width: 22, background: color === "amber" ? "var(--amber)" : color === "cyan" ? "var(--cyan)" : (color === "red" ? "var(--red)" : "var(--green)") }} title={window.BIT.fmt(v)}>
                 <span className="v">{window.BIT.fmtK(v)}</span>
               </div>
             </div>
@@ -812,7 +880,9 @@ const InlineFilterBar = ({ kindHint, drilldown, setDrilldown, filters, setFilter
   React.useEffect(() => {
     if (!catOpen && !ccOpen && !refOpen) return;
     const handler = (e) => {
-      if (!e.target.closest('.ifb-search-wrap')) { setCatOpen(false); setCcOpen(false); setRefOpen(false); }
+      if (!e.target.closest('.ifb-search-wrap') && !e.target.closest('.ifb-popover')) {
+        setCatOpen(false); setCcOpen(false); setRefOpen(false);
+      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -900,6 +970,22 @@ const ExportButton = () => (
     <Icon name="download" /> Exportar
   </button>
 );
+
+// Export single page as PDF
+const PageExportButton = ({ pageId }) => {
+  const handleExport = () => {
+    if (window.startBiExport) {
+      window.startBiExport([pageId]);
+    } else {
+      window.print();
+    }
+  };
+  return (
+    <button className="btn-ghost" onClick={handleExport} title="Exportar esta tela como PDF">
+      <Icon name="download" /> PDF
+    </button>
+  );
+};
 
 const FiltersDrawer = ({ open, onClose, filters, setFilters }) => {
   if (!open) return null;
@@ -1007,10 +1093,119 @@ const RegimeToggle = ({ filters, setFilters }) => {
   );
 };
 
+// ===== Patch filterTx =====
+// O data.js é gerado automaticamente e não pode ser editado.
+// Este patch sobrescreve window.filterTx DEPOIS que data.js carrega (pq components.jsx
+// é bundlado no app.bundle.js que carrega depois de data.js).
+// Adiciona: suporte a statusFilter como array, filtro "atrasado", filtro selectedMonths,
+// e fallback de regime competência quando não há dados "k".
+(function() {
+  var _originalFilterTx = window.filterTx;
+  if (!_originalFilterTx) return;
+  window.filterTx = function(allTx, statusFilter, drilldown, regime, extraFilters) {
+    var out = allTx;
+    // Regime: fallback quando não há dados "k" (competência)
+    var rg = (regime === 'competencia') ? 'k' : 'c';
+    var hasRg = false;
+    for (var ri = 0; ri < out.length && !hasRg; ri++) { if (out[ri][9] === rg) hasRg = true; }
+    if (!hasRg) rg = 'c';
+    out = out.filter(function(r) { return r[9] === rg; });
+
+    // Status: suporta string (legado) ou array (multiseleção)
+    var sfArr = Array.isArray(statusFilter) ? statusFilter : [statusFilter || 'realizado'];
+    if (sfArr.indexOf('tudo') === -1) {
+      var hoje = new Date();
+      var hojeKey = hoje.getFullYear() * 10000 + (hoje.getMonth() + 1) * 100 + hoje.getDate();
+      out = out.filter(function(r) {
+        for (var si = 0; si < sfArr.length; si++) {
+          if (sfArr[si] === 'realizado' && r[6] === 1) return true;
+          if (sfArr[si] === 'a_pagar_receber' && r[6] === 0) return true;
+          if (sfArr[si] === 'atrasado' && r[6] === 0) {
+            var rMes = r[1] || '';
+            var rDia = r[2] || 1;
+            var rY = parseInt(rMes.slice(0, 4), 10) || 0;
+            var rM = parseInt(rMes.slice(5, 7), 10) || 0;
+            var rKey = rY * 10000 + rM * 100 + rDia;
+            if (rKey < hojeKey) return true;
+          }
+        }
+        return false;
+      });
+    }
+
+    // Drilldown
+    if (drilldown) {
+      if (drilldown.type === 'mes') out = out.filter(function(r) { return r[1] === drilldown.value; });
+      else if (drilldown.type === 'categoria') out = out.filter(function(r) { return r[3] === drilldown.value; });
+      else if (drilldown.type === 'cliente') out = out.filter(function(r) { return r[0] === 'r' && r[4] === drilldown.value; });
+      else if (drilldown.type === 'fornecedor') out = out.filter(function(r) { return r[0] === 'd' && r[7] === drilldown.value; });
+      else if (drilldown.type === 'dia') out = out.filter(function(r) { return r[2] === drilldown.value + 1; });
+    }
+
+    // Extra filters
+    if (extraFilters) {
+      if (extraFilters.dateFrom) {
+        var dfYm = extraFilters.dateFrom.slice(0, 7);
+        var dfDay = parseInt(extraFilters.dateFrom.slice(8, 10), 10);
+        out = out.filter(function(r) { return r[1] > dfYm || (r[1] === dfYm && r[2] >= dfDay); });
+      }
+      if (extraFilters.dateTo) {
+        var dtYm = extraFilters.dateTo.slice(0, 7);
+        var dtDay = parseInt(extraFilters.dateTo.slice(8, 10), 10);
+        out = out.filter(function(r) { return r[1] < dtYm || (r[1] === dtYm && r[2] <= dtDay); });
+      }
+      if (extraFilters.categoria) {
+        if (Array.isArray(extraFilters.categoria) && extraFilters.categoria.length > 0) {
+          var _catSet = new Set(extraFilters.categoria);
+          out = out.filter(function(r) { return _catSet.has(r[3]); });
+        } else if (typeof extraFilters.categoria === 'string' && extraFilters.categoria !== "Todas categorias") {
+          out = out.filter(function(r) { return r[3] === extraFilters.categoria; });
+        }
+      }
+      if (extraFilters.diaFrom && extraFilters.diaFrom > 0) {
+        out = out.filter(function(r) { return r[2] >= extraFilters.diaFrom; });
+      }
+      if (extraFilters.diaTo && extraFilters.diaTo > 0) {
+        out = out.filter(function(r) { return r[2] <= extraFilters.diaTo; });
+      }
+      if (extraFilters.cc) {
+        if (Array.isArray(extraFilters.cc) && extraFilters.cc.length > 0) {
+          var _ccSet = new Set(extraFilters.cc);
+          out = out.filter(function(r) { return _ccSet.has(r[8]); });
+        }
+      }
+      if (extraFilters.codRef) {
+        if (Array.isArray(extraFilters.codRef) && extraFilters.codRef.length > 0) {
+          var _refSet = new Set(extraFilters.codRef);
+          out = out.filter(function(r) { return _refSet.has(r[10]); });
+        }
+      }
+      // Filtro de meses selecionados (multiseleção)
+      if (extraFilters.selectedMonths && Array.isArray(extraFilters.selectedMonths) && extraFilters.selectedMonths.length > 0 && extraFilters.selectedMonths.length < 12) {
+        var _monthSet = new Set(extraFilters.selectedMonths);
+        out = out.filter(function(r) {
+          var m = parseInt((r[1] || '').slice(5, 7), 10);
+          return _monthSet.has(m);
+        });
+      }
+    }
+    return out;
+  };
+
+  // Patch _makeBit para normalizar array
+  var _origMakeBit = window._makeBit;
+  if (_origMakeBit) {
+    window._makeBit = function(filter) {
+      var f = Array.isArray(filter) ? (filter.length === 1 ? filter[0] : 'tudo') : (filter || 'realizado');
+      return _origMakeBit(f);
+    };
+  }
+})();
+
 Object.assign(window, {
-  Icon, Sidebar, Header, Filters, FiltersDrawer, InlineFilterBar, ExportButton, DEFAULT_FILTERS,
+  Icon, Sidebar, Header, Filters, FiltersDrawer, InlineFilterBar, ExportButton, PageExportButton, DEFAULT_FILTERS,
   MonthlyBars, SingleBars, DailyBars, StackedArea, TrendChart, MultiLine,
   BarList, BarListLine, BarListLegend, DivergingBars, Donut, Spark, KpiTile,
-  PAGE_TITLES, StatusFilterSeg, STATUS_FILTERS,
+  PAGE_TITLES, StatusFilterSeg, STATUS_FILTERS, MonthMultiSelect,
   DrilldownBadge, applyDrilldown, extratoMonthKey, RegimeToggle,
 });

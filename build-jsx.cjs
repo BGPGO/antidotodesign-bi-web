@@ -78,6 +78,7 @@ const REPORTS_INJECT = `\n// Relatórios IA embutidos (gerados offline)\nwindow.
     indicators: '02 Indicadores',
     receita: '03 Receita',
     despesa: '04 Despesa',
+    custos: '04b Custos',
     fluxo: '05 Fluxo de caixa',
     tesouraria: '06 Tesouraria',
     comparativo: '07 Comparativo',
@@ -99,9 +100,18 @@ const REPORTS_INJECT = `\n// Relatórios IA embutidos (gerados offline)\nwindow.
     var fo = useState(false); var filtersOpen = fo[0], setFiltersOpen = fo[1];
     var so = useState(false); var sidebarOpen = so[0], setSidebarOpen = so[1];
     var sf = useState(function () {
-      try { return localStorage.getItem('bi.statusFilter') || 'realizado'; } catch (e) { return 'realizado'; }
+      try {
+        var saved = localStorage.getItem('bi.statusFilter');
+        if (saved) { try { var parsed = JSON.parse(saved); if (Array.isArray(parsed)) return parsed; } catch(e2) {} }
+        return saved || 'realizado';
+      } catch (e) { return 'realizado'; }
     });
     var statusFilter = sf[0], setStatusFilter = sf[1];
+    // selectedMonths: array de meses selecionados (1-12), vazio = todos
+    var sm = useState(function () {
+      try { var s = JSON.parse(localStorage.getItem('bi.selectedMonths') || '[]'); return Array.isArray(s) ? s : []; } catch (e) { return []; }
+    });
+    var selectedMonths = sm[0], setSelectedMonths = sm[1];
     // Drilldown global: setado quando o usuario clica numa barra/linha de grafico.
     var dd = useState(null);
     var drilldown = dd[0], setDrilldown = dd[1];
@@ -379,12 +389,20 @@ const REPORTS_INJECT = `\n// Relatórios IA embutidos (gerados offline)\nwindow.
     }, [printPages]);
 
     useEffect(function () {
-      try { localStorage.setItem('bi.statusFilter', statusFilter); } catch (e) {}
+      try { localStorage.setItem('bi.statusFilter', JSON.stringify(statusFilter)); } catch (e) {}
+      // _makeBit espera string simples — normaliza array para compatibilidade
+      var sfStr = Array.isArray(statusFilter)
+        ? (statusFilter.length === 1 ? statusFilter[0] : 'tudo')
+        : (statusFilter || 'realizado');
       if (typeof window._makeBit === 'function') {
-        window.BIT = window._makeBit(statusFilter);
+        window.BIT = window._makeBit(sfStr);
       }
       setDrilldown(null);
     }, [statusFilter]);
+
+    useEffect(function () {
+      try { localStorage.setItem('bi.selectedMonths', JSON.stringify(selectedMonths)); } catch (e) {}
+    }, [selectedMonths]);
 
     useEffect(function () {
       try { localStorage.setItem('bi.year', String(year)); } catch (e) {}
@@ -407,6 +425,7 @@ const REPORTS_INJECT = `\n// Relatórios IA embutidos (gerados offline)\nwindow.
       indicators: PageIndicators,
       receita: PageReceita,
       despesa: PageDespesa,
+      custos: PageCustos,
       fluxo: PageFluxo,
       tesouraria: PageTesouraria,
       comparativo: PageComparativo,
@@ -428,8 +447,11 @@ const REPORTS_INJECT = `\n// Relatórios IA embutidos (gerados offline)\nwindow.
       ? function (props) { return React.createElement(window.UpsellPage, { pageId: page }); }
       : PAGE_COMPS[page];
 
+    // Injeta selectedMonths no filters para que filterTx aplique
+    var effectiveFilters = Object.assign({}, filters, { selectedMonths: selectedMonths });
+
     var commonProps = {
-      filters: filters,
+      filters: effectiveFilters,
       setFilters: setFilters,
       onOpenFilters: function () { setFiltersOpen(true); },
       statusFilter: statusFilter,
@@ -449,7 +471,7 @@ const REPORTS_INJECT = `\n// Relatórios IA embutidos (gerados offline)\nwindow.
             var Comp = PAGE_COMPS[id];
             if (!Comp) return null;
             return (
-              <div key={id + '-' + i} className="bi-print-page">
+              <div key={id + '-' + i} className={'bi-print-page' + (id === 'fluxo' ? ' bi-print-landscape' : '')}>
                 <div className="bi-print-header">
                   <img src="assets/bgp-logo-white.png" alt="BGP" className="bi-print-logo" />
                   <div className="bi-print-title">
@@ -479,8 +501,10 @@ const REPORTS_INJECT = `\n// Relatórios IA embutidos (gerados offline)\nwindow.
             setYear={setYear}
             month={month}
             setMonth={setMonth}
-            filters={filters}
+            filters={effectiveFilters}
             setFilters={setFilters}
+            selectedMonths={selectedMonths}
+            setSelectedMonths={setSelectedMonths}
           />
           <PageComp {...commonProps} />
         </div>
