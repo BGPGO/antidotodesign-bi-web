@@ -100,11 +100,8 @@ const REPORTS_INJECT = `\n// Relatórios IA embutidos (gerados offline)\nwindow.
     var fo = useState(false); var filtersOpen = fo[0], setFiltersOpen = fo[1];
     var so = useState(false); var sidebarOpen = so[0], setSidebarOpen = so[1];
     var sf = useState(function () {
-      try {
-        var saved = localStorage.getItem('bi.statusFilter');
-        if (saved) { try { var parsed = JSON.parse(saved); if (Array.isArray(parsed)) return parsed; } catch(e2) {} }
-        return saved || 'realizado';
-      } catch (e) { return 'realizado'; }
+      try { return [localStorage.getItem('bi.statusFilter') || 'realizado']; }
+      catch (e) { return ['realizado']; }
     });
     var statusFilter = sf[0], setStatusFilter = sf[1];
     // selectedMonths: array de meses selecionados (1-12), vazio = todos
@@ -389,7 +386,11 @@ const REPORTS_INJECT = `\n// Relatórios IA embutidos (gerados offline)\nwindow.
     }, [printPages]);
 
     useEffect(function () {
-      try { localStorage.setItem('bi.statusFilter', JSON.stringify(statusFilter)); } catch (e) {}
+      // Salva como string simples pra index.html (que roda antes do bundle) nao quebrar
+      var sfForStorage = Array.isArray(statusFilter)
+        ? (statusFilter.length === 1 ? statusFilter[0] : 'tudo')
+        : (statusFilter || 'realizado');
+      try { localStorage.setItem('bi.statusFilter', sfForStorage); } catch (e) {}
       // _makeBit espera string simples — normaliza array para compatibilidade
       var sfStr = Array.isArray(statusFilter)
         ? (statusFilter.length === 1 ? statusFilter[0] : 'tudo')
