@@ -189,7 +189,6 @@ input, select { font-family: inherit; color: inherit; }
 
 /* ============== MAIN ============== */
 .main { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
-.main:has(.mms-dropdown) { overflow: visible; }
 
 .header {
   height: 70px;
@@ -202,8 +201,6 @@ input, select { font-family: inherit; color: inherit; }
   backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
   position: relative;
-  z-index: 60;
-  overflow: visible;
   z-index: 10;
 }
 .hd-icon-btn {
@@ -2821,29 +2818,6 @@ table.t tr.total td {
     max-height: none !important;
     overflow: visible !important;
   }
-  /* Fluxo de caixa: garante que tabela e gráfico não sejam cortados */
-  body.bi-print-mode .card,
-  body.bi-print-mode .fluxo-card-scroll {
-    overflow: visible !important;
-  }
-  /* Fluxo de caixa: força landscape, reduz fonte pra caber 14+ colunas */
-  body.bi-print-mode .fluxo-card-scroll table.t {
-    font-size: 8px !important;
-    min-width: 0 !important;
-  }
-  body.bi-print-mode .fluxo-card-scroll table.t th,
-  body.bi-print-mode .fluxo-card-scroll table.t td {
-    padding: 3px 4px !important;
-    min-width: 0 !important;
-    white-space: nowrap;
-  }
-  body.bi-print-mode .fluxo-card-scroll table.t th:first-child,
-  body.bi-print-mode .fluxo-card-scroll table.t td:first-child {
-    max-width: 180px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
   /* Cards não quebram no meio (mas se forem grandes demais, deixa) */
   body.bi-print-mode .card { break-inside: auto; page-break-inside: auto; }
   body.bi-print-mode .kpi-row, body.bi-print-mode .row {
@@ -2851,9 +2825,6 @@ table.t tr.total td {
     break-inside: avoid;
   }
   @page { size: A4; margin: 8mm; }
-  /* Fluxo de caixa: página landscape */
-  .bi-print-landscape { page: fluxo-landscape; }
-  @page fluxo-landscape { size: A4 landscape; margin: 8mm; }
 }
 
 /* Escopa o @media print legado (Relatório IA standalone) pra não interferir
@@ -2867,35 +2838,6 @@ table.t tr.total td {
   body:not(.bi-print-mode) .drawer-overlay,
   body:not(.bi-print-mode) .drawer { display: none !important; }
 }
-
-/* ===== MonthMultiSelect (dropdown) ===== */
-.mms-wrap { position: relative; display: inline-block; }
-.mms-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  min-width: 180px;
-  max-height: 320px;
-  overflow-y: auto;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm, 6px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-  z-index: 10000;
-  padding: 4px 0;
-}
-.mms-item {
-  padding: 6px 12px;
-  font-size: 12px;
-  cursor: pointer;
-  color: var(--fg-2);
-  transition: background 80ms;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.mms-item:hover { background: oklch(1 0 0 / 0.06); }
-.mms-item.active { color: var(--cyan); font-weight: 600; }
 
 /* ===== CRM metas (barras horizontais) ===== */
 .crm-metas-card { padding: 18px 20px; }
@@ -2986,15 +2928,7 @@ table.t tr.total td {
   border-radius: 8px;
   flex-wrap: wrap;
   position: relative;
-  z-index: 2;
-  overflow: visible;
-}
-/* Quando um popover de filtro está aberto, desabilita clip no .page e .main pra o dropdown não ficar cortado */
-.page:has(.ifb-popover) {
-  overflow: visible;
-}
-.main:has(.ifb-popover) {
-  overflow: visible;
+  z-index: 40;
 }
 .ifb-item {
   display: flex;
@@ -3031,15 +2965,15 @@ table.t tr.total td {
   position: absolute;
   top: 100%;
   left: 0;
+  right: 0;
   margin-top: 4px;
-  z-index: 5;
   background: var(--surface);
   border: 1px solid var(--cyan);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 9999;
   padding: 8px;
   min-width: 280px;
-  max-width: 420px;
 }
 .ifb-search-input {
   width: 100%;

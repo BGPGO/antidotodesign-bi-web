@@ -17,7 +17,7 @@ module.exports = {
   },
   pages: {
     geral: {
-      overview: "active", receita: "active", despesa: "active", custos: "active",
+      overview: "active", receita: "active", despesa: "active",
       fluxo: "active", tesouraria: "active", comparativo: "active",
       relatorio: "active", valuation: "hidden",
       orcamento: "hidden", dre: "hidden",

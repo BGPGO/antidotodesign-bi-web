@@ -9,14 +9,7 @@ const PageFluxo = ({ filters, setFilters, onOpenFilters, statusFilter, drilldown
   const B = useMemo(() => window.getBit(statusFilter, drilldown, year, month, filters && filters.regime, filters), [statusFilter, drilldown, year, month, filters]);
   const isMobile = useIsMobile();
   const [view, setView] = useState("horizontal");
-  const isPrintMode = typeof document !== "undefined" && document.body.classList.contains("bi-print-mode");
-  // Estado expandido: print mode lê do window (preserva o que o usuário abriu na tela)
-  const [expanded, setExpanded] = useState(() => {
-    if (isPrintMode && window._fluxoExpanded) return window._fluxoExpanded;
-    return { Receita: true, Despesa: true };
-  });
-  // Salva estado no window sempre que muda (pra instância do print mode ler)
-  useEffect(() => { if (!isPrintMode) window._fluxoExpanded = expanded; }, [expanded, isPrintMode]);
+  const [expanded, setExpanded] = useState({ Receita: true, Despesa: true });
   const refYear = (B.META && B.META.ref_year) || new Date().getFullYear();
   const regime = (filters && filters.regime) || "caixa";
 
@@ -193,7 +186,6 @@ const PageFluxo = ({ filters, setFilters, onOpenFilters, statusFilter, drilldown
           <div className="status-line">Matriz por categoria com hierarquia expandível</div>
         </div>
         <div className="actions">
-          <PageExportButton pageId="fluxo" />
           <div className="seg">
             <button className={view === "horizontal" ? "active" : ""} onClick={() => setView("horizontal")}>Horizontal</button>
             <button className={view === "vertical" ? "active" : ""} onClick={() => setView("vertical")}>Vertical</button>
@@ -201,7 +193,7 @@ const PageFluxo = ({ filters, setFilters, onOpenFilters, statusFilter, drilldown
           <RegimeToggle filters={filters} setFilters={setFilters} />
         </div>
       </div>
-      <div className="card fluxo-card-scroll" style={{ overflow: "auto" }}>
+      <div className="card" style={{ overflow: "auto" }}>
         <table className="t" style={{ minWidth: 900 }}>
           <thead>
             <tr>
@@ -384,7 +376,6 @@ const PageTesouraria = ({ filters, setFilters, onOpenFilters, statusFilter, dril
           <div className="status-line"><span className="live-dot" /> Saldos e pulso · {(B.META && B.META.ref_year) || "—"}</div>
         </div>
         <div className="actions">
-          <PageExportButton pageId="tesouraria" />
           <RegimeToggle filters={filters} setFilters={setFilters} />
         </div>
       </div>
@@ -805,7 +796,6 @@ const PageComparativo = ({ filters, setFilters, statusFilter, drilldown, setDril
           <div className="status-line">{periodLabel(p1)} vs {periodLabel(p2)}</div>
         </div>
         <div className="actions">
-          <PageExportButton pageId="comparativo" />
           <RegimeToggle filters={filters} setFilters={setFilters} />
         </div>
       </div>
