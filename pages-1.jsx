@@ -93,7 +93,7 @@ function useDre(statusFilter, drilldown, year, refYear, filters) {
 }
 
 // Side-by-side monthly bars (Receita green / Despesa red) with floating value chips
-const OverviewBars = ({ data, height = 220, year = "2026", onBarClick, activeIdx }) => {
+const OverviewBars = ({ data, height = 220, year = "2026", onBarClick, activeIdx, activeKind }) => {
   const B = window.BIT;
   const max = Math.max(...data.map(d => Math.max(d.receita, d.despesa, d.custos || 0)), 1);
   // Escala dinâmica: calcula step pra ter no máximo 5 ticks
@@ -129,15 +129,15 @@ const OverviewBars = ({ data, height = 220, year = "2026", onBarClick, activeIdx
             return (
               <div key={i} className={cls}>
                 <div className="ov-bar-stack">
-                  <div className="ov-bar green" style={{ height: `${rH}%`, cursor: onBarClick ? "pointer" : undefined }} title={`Receita: ${B.fmt(d.receita)}`}
+                  <div className="ov-bar green" style={{ height: `${rH}%`, cursor: onBarClick ? "pointer" : undefined, opacity: (hasActive && activeKind && activeKind !== "r") ? 0.25 : undefined, transition: "opacity 150ms, filter 150ms" }} title={`Receita: ${B.fmt(d.receita)}`}
                     onClick={onBarClick ? (e) => { e.stopPropagation(); onBarClick(d, i, "r"); } : undefined}>
                     <span className="ov-bar-chip">{fmtChip(d.receita)}</span>
                   </div>
-                  <div className="ov-bar red" style={{ height: `${dH}%`, cursor: onBarClick ? "pointer" : undefined }} title={`Despesa: ${B.fmt(d.despesa)}`}
+                  <div className="ov-bar red" style={{ height: `${dH}%`, cursor: onBarClick ? "pointer" : undefined, opacity: (hasActive && activeKind && activeKind !== "d") ? 0.25 : undefined, transition: "opacity 150ms, filter 150ms" }} title={`Despesa: ${B.fmt(d.despesa)}`}
                     onClick={onBarClick ? (e) => { e.stopPropagation(); onBarClick(d, i, "d"); } : undefined}>
                     <span className="ov-bar-chip">{fmtChip(d.despesa)}</span>
                   </div>
-                  {(d.custos > 0) && <div className="ov-bar amber" style={{ height: `${(d.custos / niceMax) * 100}%`, cursor: onBarClick ? "pointer" : undefined }} title={`Custos: ${B.fmt(d.custos)}`}
+                  {(d.custos > 0) && <div className="ov-bar amber" style={{ height: `${(d.custos / niceMax) * 100}%`, cursor: onBarClick ? "pointer" : undefined, opacity: (hasActive && activeKind && activeKind !== "c") ? 0.25 : undefined, transition: "opacity 150ms, filter 150ms" }} title={`Custos: ${B.fmt(d.custos)}`}
                     onClick={onBarClick ? (e) => { e.stopPropagation(); onBarClick(d, i, "c"); } : undefined}>
                     <span className="ov-bar-chip">{fmtChip(d.custos)}</span>
                   </div>}
@@ -393,7 +393,7 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
                 <span className="val">{B.fmtK(dre.custos)}</span>
               </span>
             </div>
-            <OverviewBars data={chartData} height={220} year={String(refYear)} onBarClick={handleBarMes} activeIdx={activeMonthIdx} />
+            <OverviewBars data={chartData} height={220} year={String(refYear)} onBarClick={handleBarMes} activeIdx={activeMonthIdx} activeKind={drilldown && drilldown.kind} />
           </div>
 
           {/* Tabela detalhada do mês clicado */}
@@ -540,6 +540,7 @@ const PageReceita = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
   const B = useMemo(() => window.getBit(statusFilter, drilldown, year, month, filters && filters.regime, filters), [statusFilter, drilldown, year, month, filters]);
   const BFull = useMemo(() => window.getBit(statusFilter, null, year, month, filters && filters.regime, filters), [statusFilter, year, month, filters]);
   const [range, setRange] = useState("12M");
+  const [listView, setListView] = useState("categorias");
   const refYear = (B.META && B.META.ref_year) || new Date().getFullYear();
   const dre = useDre(statusFilter, drilldown, year, refYear, filters);
   const dreFull = useDre(statusFilter, null, year, refYear, filters);
@@ -610,23 +611,32 @@ const PageReceita = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
           onBarClick={handleBarMes} activeIdx={activeMonthIdx} />
       </div>
 
-      <div className="row" style={{ gridTemplateColumns: "minmax(0, 4fr) minmax(0, 5fr) minmax(0, 4fr)" }}>
+      <div className="row" style={{ gridTemplateColumns: "minmax(0, 4fr) minmax(0, 8fr)" }}>
         <div className="card">
-          <h2 className="card-title">Receita por categoria</h2>
-          <BarList items={BFull.RECEITA_CATEGORIAS} color="green" onItemClick={handleCategoria} activeName={activeCategoria} />
+          <div className="card-title-row" style={{ marginBottom: 10 }}>
+            <div className="seg">
+              <button className={listView === "categorias" ? "active" : ""} onClick={() => setListView("categorias")}>Categorias</button>
+              <button className={listView === "clientes" ? "active" : ""} onClick={() => setListView("clientes")}>Clientes</button>
+            </div>
+          </div>
+          {listView === "categorias"
+            ? <BarList items={BFull.RECEITA_CATEGORIAS} color="green" onItemClick={handleCategoria} activeName={activeCategoria} />
+            : <BarList items={BFull.RECEITA_CLIENTES} color="green" onItemClick={handleCliente} activeName={activeCliente} />
+          }
         </div>
 
-        <div className="card">
-          <div className="card-title-row">
-            <h2 className="card-title">Extrato de receitas {drilldown ? `· ${drilldown.label}` : ""}</h2>
-          </div>
-          <div className="t-scroll">
+        <div style={{ position: "relative", minHeight: 0 }}>
+          <div className="card" style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div className="card-title-row">
+              <h2 className="card-title">Extrato de receitas {drilldown ? `· ${drilldown.label}` : ""}</h2>
+            </div>
+            <div className="t-scroll" style={{ maxHeight: "none", flex: 1, minHeight: 0, overflow: "auto" }}>
             <table className="t">
               <thead>
                 <tr><th>Data</th><th>Categoria</th><th>Cliente</th><th className="num">Receita</th></tr>
               </thead>
               <tbody>
-                {extratoFiltrado.slice(0, 30).map((e, i) => (
+                {extratoFiltrado.map((e, i) => (
                   <tr key={i}>
                     <td style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>{e[0]}</td>
                     <td>{e[2]}</td>
@@ -644,11 +654,7 @@ const PageReceita = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
               </tbody>
             </table>
           </div>
-        </div>
-
-        <div className="card">
-          <h2 className="card-title">Receita por cliente</h2>
-          <BarList items={BFull.RECEITA_CLIENTES} color="green" onItemClick={handleCliente} activeName={activeCliente} />
+          </div>
         </div>
       </div>
     </div>
@@ -659,6 +665,7 @@ const PageDespesa = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
   const B = useMemo(() => window.getBit(statusFilter, drilldown, year, month, filters && filters.regime, filters), [statusFilter, drilldown, year, month, filters]);
   const BFull = useMemo(() => window.getBit(statusFilter, null, year, month, filters && filters.regime, filters), [statusFilter, year, month, filters]);
   const [range, setRange] = useState("12M");
+  const [listView, setListView] = useState("categorias");
   const refYear = (B.META && B.META.ref_year) || new Date().getFullYear();
   const dre = useDre(statusFilter, drilldown, year, refYear, filters);
   const dreFull = useDre(statusFilter, null, year, refYear, filters);
@@ -726,23 +733,32 @@ const PageDespesa = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
           onBarClick={handleBarMes} activeIdx={activeMonthIdx} />
       </div>
 
-      <div className="row" style={{ gridTemplateColumns: "minmax(0, 4fr) minmax(0, 5fr) minmax(0, 4fr)" }}>
+      <div className="row" style={{ gridTemplateColumns: "minmax(0, 4fr) minmax(0, 8fr)" }}>
         <div className="card">
-          <h2 className="card-title">Despesas por categoria</h2>
-          <BarList items={BFull.DESPESA_CATEGORIAS} color="red" onItemClick={handleCategoria} activeName={activeCategoria} />
+          <div className="card-title-row" style={{ marginBottom: 10 }}>
+            <div className="seg">
+              <button className={listView === "categorias" ? "active" : ""} onClick={() => setListView("categorias")}>Categorias</button>
+              <button className={listView === "fornecedores" ? "active" : ""} onClick={() => setListView("fornecedores")}>Fornecedores</button>
+            </div>
+          </div>
+          {listView === "categorias"
+            ? <BarList items={BFull.DESPESA_CATEGORIAS} color="red" onItemClick={handleCategoria} activeName={activeCategoria} />
+            : <BarList items={BFull.DESPESA_FORNECEDORES} color="red" onItemClick={handleFornecedor} activeName={activeFornecedor} />
+          }
         </div>
 
-        <div className="card">
-          <div className="card-title-row">
-            <h2 className="card-title">Extrato de despesas {drilldown ? `· ${drilldown.label}` : ""}</h2>
-          </div>
-          <div className="t-scroll">
-            <table className="t">
-              <thead>
-                <tr><th>Data</th><th>Categoria</th><th>Fornecedor</th><th className="num">Despesa</th></tr>
+        <div style={{ position: "relative", minHeight: 0 }}>
+          <div className="card" style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div className="card-title-row">
+              <h2 className="card-title">Extrato de despesas {drilldown ? `· ${drilldown.label}` : ""}</h2>
+            </div>
+            <div className="t-scroll" style={{ maxHeight: "none", flex: 1, minHeight: 0, overflow: "auto" }}>
+              <table className="t">
+                <thead>
+                  <tr><th>Data</th><th>Categoria</th><th>Fornecedor</th><th className="num">Despesa</th></tr>
               </thead>
               <tbody>
-                {extratoFiltrado.slice(0, 30).map((e, i) => (
+                {extratoFiltrado.map((e, i) => (
                   <tr key={i}>
                     <td style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>{e[0]}</td>
                     <td>{e[2]}</td>
@@ -760,11 +776,7 @@ const PageDespesa = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
               </tbody>
             </table>
           </div>
-        </div>
-
-        <div className="card">
-          <h2 className="card-title">Despesas por fornecedor</h2>
-          <BarList items={BFull.DESPESA_FORNECEDORES} color="red" onItemClick={handleFornecedor} activeName={activeFornecedor} />
+          </div>
         </div>
       </div>
     </div>
