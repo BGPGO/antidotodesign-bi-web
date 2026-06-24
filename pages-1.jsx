@@ -814,6 +814,7 @@ const PageDespesa = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
 const PageCustos = ({ filters, setFilters, onOpenFilters, statusFilter, drilldown, setDrilldown, year, month }) => {
   const B = useMemo(() => window.getBit(statusFilter, drilldown, year, month, filters && filters.regime, filters), [statusFilter, drilldown, year, month, filters]);
   const BFull = useMemo(() => window.getBit(statusFilter, null, year, month, filters && filters.regime, filters), [statusFilter, year, month, filters]);
+  const [listView, setListView] = useState("categorias");
   const refYear = (B.META && B.META.ref_year) || new Date().getFullYear();
   const dre = useDre(statusFilter, drilldown, year, refYear, filters);
   const dreFull = useDre(statusFilter, null, year, refYear, filters);
@@ -839,7 +840,7 @@ const PageCustos = ({ filters, setFilters, onOpenFilters, statusFilter, drilldow
       catMap[cat] = (catMap[cat] || 0) + r[5];
       fornMap[forn] = (fornMap[forn] || 0) + r[5];
       var dataStr = String(r[2]).padStart(2, "0") + "/" + r[1].slice(5, 7) + "/" + r[1].slice(0, 4);
-      extrato.push([dataStr, r[8] || "", cat, forn, -r[5], ""]);
+      extrato.push([dataStr, r[8] || "", cat, forn, -r[5], "", r[10] || "", r[11] || ""]);
     }
     var cats = Object.entries(catMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
     var forns = Object.entries(fornMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
@@ -899,45 +900,52 @@ const PageCustos = ({ filters, setFilters, onOpenFilters, statusFilter, drilldow
           onBarClick={handleBarMes} activeIdx={activeMonthIdx} />
       </div>
 
-      <div className="row" style={{ gridTemplateColumns: "minmax(0, 4fr) minmax(0, 5fr) minmax(0, 4fr)" }}>
+      <div className="row" style={{ gridTemplateColumns: "minmax(0, 4fr) minmax(0, 8fr)" }}>
         <div className="card">
-          <h2 className="card-title">Custos por categoria</h2>
-          <BarList items={custosCategorias} color="amber" onItemClick={handleCategoria} activeName={activeCategoria} />
+          <div className="card-title-row" style={{ marginBottom: 10 }}>
+            <div className="seg">
+              <button className={listView === "categorias" ? "active" : ""} onClick={() => setListView("categorias")}>Categorias</button>
+              <button className={listView === "fornecedores" ? "active" : ""} onClick={() => setListView("fornecedores")}>Fornecedores</button>
+            </div>
+          </div>
+          {listView === "categorias"
+            ? <BarList items={custosCategorias} color="amber" onItemClick={handleCategoria} activeName={activeCategoria} />
+            : <BarList items={custosFornecedores} color="amber" onItemClick={handleFornecedor} activeName={activeFornecedor} />
+          }
         </div>
 
-        <div className="card">
-          <div className="card-title-row">
-            <h2 className="card-title">Extrato de custos {drilldown ? `· ${drilldown.label}` : ""}</h2>
-          </div>
-          <div className="t-scroll">
-            <table className="t">
-              <thead>
-                <tr><th>Data</th><th>Categoria</th><th>Fornecedor</th><th className="num">Custo</th></tr>
-              </thead>
-              <tbody>
-                {extratoFiltrado.slice(0, 30).map((e, i) => (
-                  <tr key={i}>
-                    <td style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>{e[0]}</td>
-                    <td>{e[2]}</td>
-                    <td>{e[3]}</td>
-                    <td className="num" style={{ color: "var(--amber)" }}>{B.fmt(Math.abs(e[4]))}</td>
+        <div style={{ position: "relative", minHeight: 0 }}>
+          <div className="card" style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div className="card-title-row">
+              <h2 className="card-title">Extrato de custos {drilldown ? `· ${drilldown.label}` : ""}</h2>
+            </div>
+            <div className="t-scroll" style={{ maxHeight: "none", flex: 1, minHeight: 0, overflow: "auto" }}>
+              <table className="t">
+                <thead>
+                  <tr><th>Data</th><th>Categoria</th><th>Fornecedor</th><th>PTA</th><th>Descrição</th><th className="num">Custo</th></tr>
+                </thead>
+                <tbody>
+                  {extratoFiltrado.map((e, i) => (
+                    <tr key={i}>
+                      <td style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>{e[0]}</td>
+                      <td>{e[2]}</td>
+                      <td>{e[3]}</td>
+                      <td style={{ fontSize: 11 }}>{e[6] || ""}</td>
+                      <td style={{ fontSize: 11, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e[7] || ""}</td>
+                      <td className="num" style={{ color: "var(--amber)" }}>{B.fmt(Math.abs(e[4]))}</td>
+                    </tr>
+                  ))}
+                  {extratoFiltrado.length === 0 && (
+                    <tr><td colSpan="6" style={{ color: "var(--mute)", textAlign: "center", padding: 18 }}>Sem custos no filtro selecionado</td></tr>
+                  )}
+                  <tr className="total">
+                    <td colSpan="5">Total{drilldown ? " (filtrado)" : ""}</td>
+                    <td className="num" style={{ color: "var(--amber)" }}>{B.fmt(totalFiltrado)}</td>
                   </tr>
-                ))}
-                {extratoFiltrado.length === 0 && (
-                  <tr><td colSpan="4" style={{ color: "var(--mute)", textAlign: "center", padding: 18 }}>Sem custos no filtro selecionado</td></tr>
-                )}
-                <tr className="total">
-                  <td colSpan="3">Total{drilldown ? " (filtrado)" : ""}</td>
-                  <td className="num" style={{ color: "var(--amber)" }}>{B.fmt(totalFiltrado)}</td>
-                </tr>
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-
-        <div className="card">
-          <h2 className="card-title">Custos por fornecedor</h2>
-          <BarList items={custosFornecedores} color="amber" onItemClick={handleFornecedor} activeName={activeFornecedor} />
         </div>
       </div>
     </div>
