@@ -127,18 +127,18 @@ const OverviewBars = ({ data, height = 220, year = "2026", onBarClick, activeIdx
               (hasActive && i === activeIdx ? " active" : "") +
               (hasActive && i !== activeIdx ? " dimmed" : "");
             return (
-              <div key={i} className={cls}
-                onClick={onBarClick ? () => onBarClick(d, i) : undefined}
-                style={onBarClick ? { cursor: "pointer" } : undefined}
-              >
+              <div key={i} className={cls}>
                 <div className="ov-bar-stack">
-                  <div className="ov-bar green" style={{ height: `${rH}%` }} title={`Receita: ${B.fmt(d.receita)}`}>
+                  <div className="ov-bar green" style={{ height: `${rH}%`, cursor: onBarClick ? "pointer" : undefined }} title={`Receita: ${B.fmt(d.receita)}`}
+                    onClick={onBarClick ? (e) => { e.stopPropagation(); onBarClick(d, i, "r"); } : undefined}>
                     <span className="ov-bar-chip">{fmtChip(d.receita)}</span>
                   </div>
-                  <div className="ov-bar red" style={{ height: `${dH}%` }} title={`Despesa: ${B.fmt(d.despesa)}`}>
+                  <div className="ov-bar red" style={{ height: `${dH}%`, cursor: onBarClick ? "pointer" : undefined }} title={`Despesa: ${B.fmt(d.despesa)}`}
+                    onClick={onBarClick ? (e) => { e.stopPropagation(); onBarClick(d, i, "d"); } : undefined}>
                     <span className="ov-bar-chip">{fmtChip(d.despesa)}</span>
                   </div>
-                  {(d.custos > 0) && <div className="ov-bar amber" style={{ height: `${(d.custos / niceMax) * 100}%` }} title={`Custos: ${B.fmt(d.custos)}`}>
+                  {(d.custos > 0) && <div className="ov-bar amber" style={{ height: `${(d.custos / niceMax) * 100}%`, cursor: onBarClick ? "pointer" : undefined }} title={`Custos: ${B.fmt(d.custos)}`}
+                    onClick={onBarClick ? (e) => { e.stopPropagation(); onBarClick(d, i, "c"); } : undefined}>
                     <span className="ov-bar-chip">{fmtChip(d.custos)}</span>
                   </div>}
                 </div>
@@ -251,16 +251,18 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
         return B.MONTHS_FULL.indexOf(mn) === idx;
       })
     : -1;
-  const handleBarMes = (d, i) => {
+  const handleBarMes = (d, i, kind) => {
     const mm = String(i + 1).padStart(2, "0");
     const ym = `${refYear}-${mm}`;
-    // Toggle: clicar de novo na mesma barra limpa o drilldown
-    if (drilldown && drilldown.type === "mes" && drilldown.value === ym) {
+    // Toggle: clicar de novo na mesma barra+tipo limpa o drilldown
+    if (drilldown && drilldown.type === "mes" && drilldown.value === ym && drilldown.kind === kind) {
       setDrilldown(null);
       return;
     }
-    const lbl = `${d.m.charAt(0).toUpperCase() + d.m.slice(1, 3)}/${refYear}`;
-    setDrilldown({ type: "mes", value: ym, label: lbl });
+    const mesNome = d.m.charAt(0).toUpperCase() + d.m.slice(1, 3);
+    const tipoNome = kind === "r" ? "Receitas" : kind === "c" ? "Custos" : "Despesas";
+    const lbl = `${tipoNome} ${mesNome}/${refYear}`;
+    setDrilldown({ type: "mes", value: ym, kind: kind, label: lbl });
   };
 
   // Indicator series for the toggle chart (derived da MONTH_DATA full — sem drilldown)
@@ -300,9 +302,17 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
     if (!drilldown || drilldown.type !== "mes") return [];
     const rg = (filters && filters.regime === "competencia") ? "k" : "c";
     const sf = statusFilter || "realizado";
-    const txs = window.filterTx ? window.filterTx(window.ALL_TX || [], sf, drilldown, rg === "k" ? "competencia" : "caixa", filters) : [];
+    let txs = window.filterTx ? window.filterTx(window.ALL_TX || [], sf, drilldown, rg === "k" ? "competencia" : "caixa", filters) : [];
+    txs = txs.filter(r => r[1] && r[1].startsWith(String(year || refYear)));
+    // Filtra por tipo (receita/despesa/custo) quando clicou numa barra específica
+    if (drilldown.kind === "r") {
+      txs = txs.filter(r => r[0] === "r");
+    } else if (drilldown.kind === "d") {
+      txs = txs.filter(r => r[0] === "d" && !(r[3] && r[3].indexOf("03.0") >= 0));
+    } else if (drilldown.kind === "c") {
+      txs = txs.filter(r => r[0] === "d" && r[3] && r[3].indexOf("03.0") >= 0);
+    }
     return txs
-      .filter(r => r[1] && r[1].startsWith(String(year || refYear)))
       .map(r => ({
         data: `${String(r[2]).padStart(2, "0")}/${r[1].slice(5, 7)}/${r[1].slice(0, 4)}`,
         tipo: r[0] === "r" ? "Receita" : r[3] && r[3].indexOf("03.0") >= 0 ? "Custo" : "Despesa",
