@@ -318,6 +318,8 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
         tipo: r[0] === "r" ? "Receita" : r[3] && r[3].indexOf("03.0") >= 0 ? "Custo" : "Despesa",
         categoria: r[3] || "",
         pessoa: r[0] === "r" ? (r[4] || "") : (r[7] || ""),
+        pta: r[10] || "",
+        descricao: r[11] || "",
         valor: r[0] === "r" ? r[5] : -r[5],
       }))
       .sort((a, b) => b.valor - a.valor);
@@ -368,6 +370,25 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
             </div>
             <div className="kpi-stack-label">Margem líquida</div>
           </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {[1, 2, 3, 4].map(tri => {
+              const mIni = (tri - 1) * 3;
+              const recTri = (dre.receitaOpMonth || []).slice(mIni, mIni + 3).reduce((s, v) => s + v, 0);
+              const despTri = (dre.despSemImpMonth || []).slice(mIni, mIni + 3).reduce((s, v) => s + v, 0);
+              const liqTri = recTri - despTri;
+              const margemTri = recTri > 0 ? ((liqTri / recTri) * 100) : 0;
+              return (
+                <div key={tri} className={`card ${liqTri >= 0 ? "resultado-card" : "resultado-card resultado-card-neg"}`} style={{ padding: "10px 12px" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "var(--fg-3)", marginBottom: 4 }}>{tri}º TRI</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 14, color: liqTri >= 0 ? "var(--green)" : "var(--red)" }}>{B.fmt(liqTri)}</div>
+                  <div style={{ fontSize: 11, color: recTri > 0 ? (liqTri >= 0 ? "var(--green)" : "var(--red)") : "var(--mute)" }}>
+                    {recTri > 0 ? `${margemTri.toFixed(2).replace(".", ",")}%` : "—"}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* RIGHT: Receitas e Despesas + Visualização Indicadores */}
@@ -393,7 +414,7 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
                 <span className="val">{B.fmtK(dre.custos)}</span>
               </span>
             </div>
-            <OverviewBars data={chartData} height={220} year={String(refYear)} onBarClick={handleBarMes} activeIdx={activeMonthIdx} activeKind={drilldown && drilldown.kind} />
+            <OverviewBars data={chartData} height={260} year={String(refYear)} onBarClick={handleBarMes} activeIdx={activeMonthIdx} activeKind={drilldown && drilldown.kind} />
           </div>
 
           {/* Tabela detalhada do mês clicado */}
@@ -406,7 +427,7 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
               <div className="t-scroll" style={{ maxHeight: 400 }}>
                 <table className="t">
                   <thead>
-                    <tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Cliente / Fornecedor</th><th className="num">Valor</th></tr>
+                    <tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Cliente / Fornecedor</th><th>PTA</th><th>Descrição</th><th className="num">Valor</th></tr>
                   </thead>
                   <tbody>
                     {extratoMesFiltrado.slice(0, 50).map((e, i) => (
@@ -415,11 +436,13 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
                         <td><span className={`chip ${e.tipo === "Receita" ? "green" : e.tipo === "Custo" ? "amber" : "red"}`} style={{ fontSize: 10 }}>{e.tipo}</span></td>
                         <td style={{ fontSize: 11 }}>{e.categoria}</td>
                         <td style={{ fontSize: 11 }}>{e.pessoa}</td>
+                        <td style={{ fontSize: 11 }}>{e.pta}</td>
+                        <td style={{ fontSize: 11, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.descricao}</td>
                         <td className={`num ${e.valor >= 0 ? "green" : "red"}`}>{B.fmt(Math.abs(e.valor))}</td>
                       </tr>
                     ))}
                     <tr className="total">
-                      <td colSpan="4">Total</td>
+                      <td colSpan="6">Total</td>
                       <td className="num">{B.fmt(extratoMesFiltrado.reduce((s, e) => s + e.valor, 0))}</td>
                     </tr>
                   </tbody>
@@ -446,7 +469,7 @@ const PageOverview = ({ filters, setFilters, onOpenFilters, statusFilter, drilld
                   : B.fmtK(current.values.reduce((s, v) => s + v, 0))}</span>
               </span>
             </div>
-            <IndicatorLine values={current.values} labels={monthLabels} height={240} color={current.color} format={current.fmt} />
+            <IndicatorLine values={current.values} labels={monthLabels} height={260} color={current.color} format={current.fmt} />
           </div>
         </div>
       </div>
@@ -633,7 +656,7 @@ const PageReceita = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
             <div className="t-scroll" style={{ maxHeight: "none", flex: 1, minHeight: 0, overflow: "auto" }}>
             <table className="t">
               <thead>
-                <tr><th>Data</th><th>Categoria</th><th>Cliente</th><th className="num">Receita</th></tr>
+                <tr><th>Data</th><th>Categoria</th><th>Cliente</th><th>PTA</th><th>Descrição</th><th className="num">Receita</th></tr>
               </thead>
               <tbody>
                 {extratoFiltrado.map((e, i) => (
@@ -641,14 +664,16 @@ const PageReceita = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
                     <td style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>{e[0]}</td>
                     <td>{e[2]}</td>
                     <td>{e[3]}</td>
+                    <td style={{ fontSize: 11 }}>{e[6] || ""}</td>
+                    <td style={{ fontSize: 11, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e[7] || ""}</td>
                     <td className="num green">{B.fmt(Math.abs(e[4]))}</td>
                   </tr>
                 ))}
                 {extratoFiltrado.length === 0 && (
-                  <tr><td colSpan="4" style={{ color: "var(--mute)", textAlign: "center", padding: 18 }}>Sem receitas no filtro selecionado</td></tr>
+                  <tr><td colSpan="6" style={{ color: "var(--mute)", textAlign: "center", padding: 18 }}>Sem receitas no filtro selecionado</td></tr>
                 )}
                 <tr className="total">
-                  <td colSpan="3">Total{drilldown ? " (filtrado)" : ""}</td>
+                  <td colSpan="5">Total{drilldown ? " (filtrado)" : ""}</td>
                   <td className="num green">{B.fmt(totalFiltrado)}</td>
                 </tr>
               </tbody>
@@ -755,7 +780,7 @@ const PageDespesa = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
             <div className="t-scroll" style={{ maxHeight: "none", flex: 1, minHeight: 0, overflow: "auto" }}>
               <table className="t">
                 <thead>
-                  <tr><th>Data</th><th>Categoria</th><th>Fornecedor</th><th className="num">Despesa</th></tr>
+                  <tr><th>Data</th><th>Categoria</th><th>Fornecedor</th><th>PTA</th><th>Descrição</th><th className="num">Despesa</th></tr>
               </thead>
               <tbody>
                 {extratoFiltrado.map((e, i) => (
@@ -763,14 +788,16 @@ const PageDespesa = ({ filters, setFilters, onOpenFilters, statusFilter, drilldo
                     <td style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>{e[0]}</td>
                     <td>{e[2]}</td>
                     <td>{e[3]}</td>
+                    <td style={{ fontSize: 11 }}>{e[6] || ""}</td>
+                    <td style={{ fontSize: 11, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e[7] || ""}</td>
                     <td className="num red">{B.fmt(Math.abs(e[4]))}</td>
                   </tr>
                 ))}
                 {extratoFiltrado.length === 0 && (
-                  <tr><td colSpan="4" style={{ color: "var(--mute)", textAlign: "center", padding: 18 }}>Sem despesas no filtro selecionado</td></tr>
+                  <tr><td colSpan="6" style={{ color: "var(--mute)", textAlign: "center", padding: 18 }}>Sem despesas no filtro selecionado</td></tr>
                 )}
                 <tr className="total">
-                  <td colSpan="3">Total{drilldown ? " (filtrado)" : ""}</td>
+                  <td colSpan="5">Total{drilldown ? " (filtrado)" : ""}</td>
                   <td className="num red">{B.fmt(totalFiltrado)}</td>
                 </tr>
               </tbody>

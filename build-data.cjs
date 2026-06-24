@@ -304,6 +304,7 @@ function normalizeAdapter(m) {
     cancelado: false,
     regime: m.regime || 'caixa',
     numDocumento: m.num_documento || '',
+    descricao: m.observacao || '',
   };
 }
 
@@ -411,14 +412,14 @@ function buildClienteAgg(items, year) {
 }
 
 function buildExtrato(rec, desp, limit = 200) {
-  // tupla compativel com mock: [data, cc, categoria, cliente, valor, status]
+  // tupla: [data, cc, categoria, cliente, valor, status, numDocumento, descricao]
   const all = [], recArr = [], despArr = [];
   for (const t of rec) {
-    const r = [fmtBR(t.data_efetiva), t.centroCusto || 'Operações', t.categoria, t.cliente, t.valor, t.status];
+    const r = [fmtBR(t.data_efetiva), t.centroCusto || 'Operações', t.categoria, t.cliente, t.valor, t.status, t.numDocumento || '', t.descricao || ''];
     all.push(r); recArr.push(r);
   }
   for (const t of desp) {
-    const r = [fmtBR(t.data_efetiva), t.centroCusto || 'Operações', t.categoria, t.cliente, -t.valor, t.status];
+    const r = [fmtBR(t.data_efetiva), t.centroCusto || 'Operações', t.categoria, t.cliente, -t.valor, t.status, t.numDocumento || '', t.descricao || ''];
     all.push(r); despArr.push(r);
   }
   // sort por data desc
@@ -622,7 +623,7 @@ const SEGMENTS = ${JSON.stringify({ realizado, a_pagar_receber, tudo }, null, 2)
 // realizadas + a pagar + canceladas excluidas). Usada pra cross-filter real
 // — pagina recalcula KPIs/charts/tabelas em runtime via aggregateTx().
 // Cada row eh tupla compacta pra reduzir tamanho do bundle:
-// [kind, mes, dia, categoria, cliente, valor, realizado, fornecedor, centroCusto, regime]
+// [kind, mes, dia, categoria, cliente, valor, realizado, fornecedor, centroCusto, regime, numDocumento, descricao]
 // regime: 'c' = caixa, 'k' = competencia (compacto pra economizar bytes)
 const ALL_TX = ${JSON.stringify([
   ...recNorm.map(t => [
@@ -637,6 +638,7 @@ const ALL_TX = ${JSON.stringify([
     t.centroCusto || '',
     (t.regime || 'caixa') === 'caixa' ? 'c' : 'k',
     t.numDocumento || '',
+    t.descricao || '',
   ]),
   ...despNorm.map(t => [
     'd',
@@ -650,6 +652,7 @@ const ALL_TX = ${JSON.stringify([
     t.centroCusto || '',
     (t.regime || 'caixa') === 'caixa' ? 'c' : 'k',
     t.numDocumento || '',
+    t.descricao || '',
   ]),
 ])};
 
@@ -693,7 +696,9 @@ function aggregateTx(txList, year) {
     }
     // Extrato compacto pra tabela (renomeado pra extRow porque outer for já usa 'row')
     const dataStr = String(dia).padStart(2,'0') + '/' + mes.slice(5,7) + '/' + mes.slice(0,4);
-    const extRow = [dataStr, cc || 'Operações', categoria, kind === 'r' ? cliente : fornecedor, kind === 'r' ? valor : -valor, realizado ? 'PAGO' : ''];
+    const numDoc = row[10] || '';
+    const desc = row[11] || '';
+    const extRow = [dataStr, cc || 'Operações', categoria, kind === 'r' ? cliente : fornecedor, kind === 'r' ? valor : -valor, realizado ? 'PAGO' : '', numDoc, desc];
     extratoArr.push(extRow);
     if (kind === 'r') extratoRecArr.push(extRow); else extratoDespArr.push(extRow);
   }
